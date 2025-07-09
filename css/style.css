@@ -1,0 +1,567 @@
+/* Custom styles for Attendance Tracker with Bootstrap */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f8f9fa; /* Changed from gradient to solid color */
+    min-height: 100vh;
+    color: #333;
+}
+
+html {
+    height: 100%;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+.nav-tabs {
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 0;
+    flex-wrap: wrap;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-radius: 0;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 1rem 1.5rem;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #495057;
+    background-color: #f8f9fa;
+    border-color: transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: #667eea;
+    background-color: transparent;
+    border-bottom: 3px solid #667eea;
+    font-weight: 600;
+}
+
+.tab-content {
+    padding: 2rem;
+}
+
+.tab-pane {
+    min-height: 400px;
+}
+
+/* Home page cards */
+.card-body .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e9ecef;
+    height: 100%;
+}
+
+.card-body .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.display-4 {
+    font-size: 3rem;
+}
+
+/* Form styling */
+.form-control {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* Button styling */
+.btn {
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #4a9a2a 0%, #95d4b8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(86, 171, 47, 0.4);
+}
+
+.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+/* Alert styling */
+.alert {
+    border-radius: 10px;
+    border: none;
+    padding: 1rem 1.5rem;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1565c0;
+}
+
+/* Table styling */
+#attendanceTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1em;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+#attendanceTable th, #attendanceTable td {
+    border: 1px solid #e0e0e0;
+    padding: 0.8em 1em;
+    text-align: left;
+}
+
+#attendanceTable th {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    font-weight: 600;
+    color: #495057;
+}
+
+#attendanceTable tr:nth-child(even) {
+    background: #f9fbfc;
+}
+
+#attendanceTable tr:hover {
+    background: #f0f4f8;
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #667eea;
+}
+
+/* Status messages */
+#fileStatus {
+    margin-bottom: 0.5em;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+}
+
+#fileStatus.error {
+    color: #d32f2f;
+    background-color: #ffebee;
+    border: 1px solid #ffcdd2;
+}
+
+#fileStatus.success {
+    color: #388e3c;
+    background-color: #e8f5e8;
+    border: 1px solid #c8e6c9;
+}
+
+/* Form sections */
+.section {
+    margin-bottom: 2em;
+}
+
+/* Enhanced Responsive Design */
+
+/* Large screens (1200px and up) */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1140px;
+    }
+    
+    .card-header {
+        padding: 2rem;
+    }
+    
+    .tab-content {
+        padding: 3rem;
+    }
+}
+
+/* Medium screens (768px to 1199px) */
+@media (max-width: 1199px) and (min-width: 768px) {
+    .container {
+        max-width: 960px;
+        padding: 0 1.5rem;
+    }
+    
+    .nav-tabs .nav-link {
+        padding: 0.875rem 1.25rem;
+        font-size: 0.95rem;
+    }
+    
+    .display-4 {
+        font-size: 2.5rem;
+    }
+    
+    .btn-lg {
+        padding: 0.875rem 1.75rem;
+        font-size: 1.05rem;
+    }
+}
+
+/* Small screens (576px to 767px) */
+@media (max-width: 767px) and (min-width: 576px) {
+    .container {
+        max-width: 100%;
+        padding: 0 1rem;
+    }
+    
+    .nav-tabs {
+        flex-direction: column;
+        border-bottom: none;
+        border-right: 2px solid #e9ecef;
+    }
+    
+    .nav-tabs .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        border-radius: 8px 0 0 8px;
+        margin-bottom: 0.25rem;
+    }
+    
+    .nav-tabs .nav-link.active {
+        border-bottom: none;
+        border-right: 3px solid #667eea;
+    }
+    
+    .tab-content {
+        padding: 1.5rem;
+    }
+    
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .card-header {
+        padding: 1.25rem;
+    }
+    
+    /* Adjust table for mobile */
+    #attendanceTable {
+        font-size: 0.9rem;
+    }
+    
+    #attendanceTable th, #attendanceTable td {
+        padding: 0.6em 0.8em;
+    }
+}
+
+/* Extra small screens (up to 575px) */
+@media (max-width: 575px) {
+    .container {
+        max-width: 100%;
+        padding: 0 0.75rem;
+    }
+    
+    .nav-tabs {
+        flex-direction: column;
+        border-bottom: none;
+        border-right: 2px solid #e9ecef;
+    }
+    
+    .nav-tabs .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border-radius: 8px 0 0 8px;
+        margin-bottom: 0.25rem;
+    }
+    
+    .nav-tabs .nav-link.active {
+        border-bottom: none;
+        border-right: 3px solid #667eea;
+    }
+    
+    .tab-content {
+        padding: 1rem;
+    }
+    
+    .display-4 {
+        font-size: 1.75rem;
+    }
+    
+    .btn-lg {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.95rem;
+    }
+    
+    .card-header {
+        padding: 1rem;
+    }
+    
+    .card-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    /* Make table scrollable on mobile */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    #attendanceTable {
+        font-size: 0.8rem;
+        min-width: 400px;
+    }
+    
+    #attendanceTable th, #attendanceTable td {
+        padding: 0.5em 0.6em;
+        white-space: nowrap;
+    }
+    
+    /* Adjust form inputs for mobile */
+    .form-control {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Stack form elements vertically on mobile */
+    .row .col-md-6,
+    .row .col-md-3 {
+        margin-bottom: 1rem;
+    }
+    
+    /* Adjust button sizes for mobile */
+    .btn {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Animation for tab transitions */
+.tab-pane.fade {
+    transition: opacity 0.3s ease;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #5a6fd8;
+}
+
+/* Additional mobile optimizations */
+@media (max-width: 767px) {
+    /* Improve touch targets */
+    input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+    
+    /* Better spacing for mobile */
+    .mb-3 {
+        margin-bottom: 1rem !important;
+    }
+    
+    .mb-4 {
+        margin-bottom: 1.5rem !important;
+    }
+    
+    /* Improve card layout on mobile */
+    .card-body .card {
+        margin-bottom: 1rem;
+    }
+    
+    /* Better alert spacing */
+    .alert {
+        padding: 0.875rem 1.25rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Improve file upload area */
+    .form-control[type="file"] {
+        padding: 0.5rem;
+    }
+}
+
+/* Landscape orientation adjustments for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+    .container {
+        padding: 0 1rem;
+    }
+    
+    .tab-content {
+        padding: 0.75rem;
+    }
+    
+    .display-4 {
+        font-size: 1.5rem;
+    }
+}
+
+.btn-save-attendance {
+    margin-left: auto;
+    min-width: 180px;
+    box-shadow: 0 2px 8px rgba(86,171,47,0.10);
+}
+
+.btn-icon {
+    padding: 0.5rem 0.6rem;
+    border-radius: 50%;
+    min-width: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+
+#saveAttendanceTabBtn.nav-link.btn-icon {
+    padding: 0.5rem 0.6rem;
+    border-radius: 50%;
+    min-width: 0;
+    width: 40px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;    
+    color: #6c757d;
+    background: none;
+    border: none;
+    transition: background 0.2s, color 0.2s;
+}
+
+#saveAttendanceTabBtn.nav-link.btn-icon.active, #saveAttendanceTabBtn.nav-link.btn-icon:focus, #saveAttendanceTabBtn.nav-link.btn-icon:hover {
+    color: #667eea;
+    background: #f8f9fa;
+    border: none;
+}
+
+@media (max-width: 575px) {
+    #saveAttendanceTabBtn.nav-link.btn-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1.1rem;
+        padding: 0.4rem 0.5rem;
+    }
+    
+    /* Hide nav-tabs sidebar by default */
+    .nav-tabs {
+        position: fixed;
+        top: 50%;
+        left: -80px;
+        transform: translateY(-50%);
+        opacity: 0;
+        pointer-events: none;
+        transition: left 0.3s cubic-bezier(.4,2,.6,1), opacity 0.3s;
+        z-index: 1050;
+        width: 64px;
+        min-width: 64px;
+        max-width: 64px;
+        height: 80vh;
+        border-radius: 40px;
+        background: linear-gradient(135deg, #f8f9fa 60%, #e9ecef 100%);
+        box-shadow: 0 2px 12px rgba(102,126,234,0.08);
+        flex-direction: column !important;
+        align-items: center;
+        margin: 0;
+        padding: 0.5rem 0;
+    }
+    .nav-tabs.sidebar-visible {
+        left: 0;
+        opacity: 1;
+        pointer-events: auto;
+    }
+    /* Ellipse toggle button */
+    #sidebarToggleBtn {
+        position: fixed;
+        left: 12px;
+        bottom: 24px;
+        z-index: 1101;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border: none;
+        box-shadow: 0 2px 12px rgba(102,126,234,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        cursor: pointer;
+        transition: background 0.2s, box-shadow 0.2s;
+    }
+    #sidebarToggleBtn:active {
+        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        box-shadow: 0 4px 16px rgba(102,126,234,0.18);
+    }
+    /* Hide toggle button when sidebar is open */
+    .sidebar-open #sidebarToggleBtn {
+        display: none;
+    }
+    /* Prevent body scroll when sidebar is open */
+    body.sidebar-open {
+        overflow: hidden;
+    }
+}
