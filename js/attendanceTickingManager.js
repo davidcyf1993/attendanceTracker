@@ -77,7 +77,7 @@ const AttendanceTickingManager = {
                 // Show Calculate Attendance tab content when tab is clicked
                 calcAttendanceTab.addEventListener('click', () => {
                     if (typeof CalcAttendanceManager !== 'undefined') {
-                        CalcAttendanceManager.showCalcAttendance(workbook, 'calcAttendanceSection');
+                        CalcAttendanceManager.showCalcAttendance('calcAttendanceSection');
                     }
                 });
             }
