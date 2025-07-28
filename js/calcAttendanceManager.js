@@ -132,7 +132,7 @@ const CalcAttendanceManager = {
             const tbody = document.getElementById('calcAttendanceTableBody');
             const searchVal = document.getElementById('calcAttendeeSearch').value.trim().toLowerCase();
             tbody.innerHTML = summary.filter(row =>
-                row.name.toLowerCase().includes(searchVal) || row.nickname.toLowerCase().includes(searchVal)
+                row.name.toString().toLowerCase().includes(searchVal) || row.nickname.toString().toLowerCase().includes(searchVal)
             ).map(row => `<tr><td>${row.name}</td><td>${row.nickname}</td><td>${row.total}</td><td>${row.present}</td><td>${row.percent}%</td></tr>`).join('');
         }
         // Attach filter events

@@ -13,18 +13,18 @@ const CrudAttendeeManager = {
         if (!section) return;
         let sortKey = this._sortKey || 'ID';
         let sortDir = this._sortDir || 1;
-        let filter = (this._searchText || '').toLowerCase();
+        let filter = String(this._searchText || '').toLowerCase();
         let filteredSheet = [...DataHelper.getAttendees()];
         if (filter) {
             filteredSheet = filteredSheet.filter(a =>
-                (a['Full Name'] || '').toLowerCase().includes(filter) ||
-                (a['Nick Name'] || '').toLowerCase().includes(filter) ||
-                (a['ID'] || '').toLowerCase().includes(filter)
+                (a['Full Name'] || '').toString().toLowerCase().includes(filter) ||
+                (a['Nick Name'] || '').toString().toLowerCase().includes(filter) ||
+                (a['ID'] || '').toString().toLowerCase().includes(filter)
             );
         }
         let sortedSheet = filteredSheet.sort((a, b) => {
-            let av = (a[sortKey] || '').toLowerCase();
-            let bv = (b[sortKey] || '').toLowerCase();
+            let av = (a[sortKey] || '').toString().toLowerCase();
+            let bv = (b[sortKey] || '').toString().toLowerCase();
             if (av < bv) return -1 * sortDir;
             if (av > bv) return 1 * sortDir;
             return 0;
@@ -96,7 +96,7 @@ const CrudAttendeeManager = {
 
     showAttendeeForm(id) {
         const section = document.getElementById('crudAttendeeSection');
-        let att = id ? DataHelper.getAttendees().find(a => a['ID'] === id) : { 'ID': '', 'Full Name': '', 'Nick Name': '' };
+        let att = id ? DataHelper.getAttendees().find(a => String(a['ID']) === String(id)) : { 'ID': '', 'Full Name': '', 'Nick Name': '' };
         let isEdit = !!id;
         section.innerHTML = `<form id="attendeeForm">
             <div class="mb-3">
@@ -132,7 +132,7 @@ const CrudAttendeeManager = {
         if (isEdit) {
             DataHelper.updateAttendee(id, { 'Full Name': fullName, 'Nick Name': nickName });
         } else {
-            if (DataHelper.getAttendees().some(a => a['ID'] === id)) {
+            if (DataHelper.getAttendees().some(a => String(a['ID']) === String(id))) {
                 showNotification('ID already exists.', 'danger');
                 return;
             }

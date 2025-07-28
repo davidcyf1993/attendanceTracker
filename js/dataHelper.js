@@ -22,11 +22,36 @@ const DataHelper = {
     workbook: null,
 
     /**
-     * Initialize the helper with a workbook
+     * Initialize the helper with a workbook.
+     * If isNew is true, always use the provided workbook and overwrite localStorage.
+     * If isNew is false, try to load from localStorage; if not found, use the provided workbook and save it.
+     * If no workbook is provided, try to load from localStorage; if not found, return false.
      * @param {Object} workbook
+     * @param {boolean} isNew
+     * @returns {boolean} true if initialized, false otherwise
      */
-    init(workbook) {
+    init(workbook, isNew = false) {
+        if (!workbook) {
+            // No workbook provided, try to load from localStorage
+            const loaded = this.loadFromLocalStorage();
+            if (loaded) {
+                this.workbook = loaded;
+                return true;
+            }
+            return false;
+        }
+        if (!isNew) {
+            // Try to load from localStorage first
+            const loaded = this.loadFromLocalStorage();
+            if (loaded) {
+                this.workbook = loaded;
+                return true;
+            }
+        }
+        // Use provided workbook and save to localStorage
         this.workbook = workbook;
+        this.saveToLocalStorage();
+        return true;
     },
 
     /**
@@ -53,6 +78,7 @@ const DataHelper = {
         const attendees = this.getAttendees();
         attendees.push(attendee);
         this.workbook.Sheets['attendee'] = XLSX.utils.json_to_sheet(attendees, { header: ['ID', 'Full Name', 'Nick Name'] });
+        this.saveToLocalStorage();
     },
 
     /**
@@ -61,8 +87,23 @@ const DataHelper = {
      * @param {Object} updatedFields
      */
     updateAttendee(id, updatedFields) {
-        const attendees = this.getAttendees().map(a => a.ID === id ? { ...a, ...updatedFields } : a);
-        this.workbook.Sheets['attendee'] = XLSX.utils.json_to_sheet(attendees, { header: ['ID', 'Full Name', 'Nick Name'] });
+        const attendees = this.getAttendees();
+        let oldId = id;
+        let newId = updatedFields.ID !== undefined ? updatedFields.ID : id;
+        // Update attendees list
+        const updatedAttendees = attendees.map(a => String(a.ID) === String(id) ? { ...a, ...updatedFields } : a);
+        this.workbook.Sheets['attendee'] = XLSX.utils.json_to_sheet(updatedAttendees, { header: ['ID', 'Full Name', 'Nick Name'] });
+        // Always update attendance matrix and localStorage
+        let matrix = this.getAttendanceMatrix();
+        if (String(oldId) !== String(newId)) {
+            for (let i = 1; i < matrix.length; ++i) {
+                if (String(matrix[i][0]) === String(oldId)) {
+                    matrix[i][0] = newId;
+                }
+            }
+        }
+        // Save matrix (even if not changed, to ensure localStorage is always up to date)
+        this.setAttendanceMatrix(matrix);
     },
 
     /**
@@ -72,6 +113,7 @@ const DataHelper = {
     deleteAttendee(id) {
         const attendees = this.getAttendees().filter(a => a.ID !== id);
         this.workbook.Sheets['attendee'] = XLSX.utils.json_to_sheet(attendees, { header: ['ID', 'Full Name', 'Nick Name'] });
+        this.saveToLocalStorage();
     },
 
     /**
@@ -90,6 +132,7 @@ const DataHelper = {
         const events = this.getEvents();
         events.push(event);
         this.workbook.Sheets['event'] = XLSX.utils.json_to_sheet(events, { header: ['ID', 'Event Name', 'Event Type', 'Datetime From', 'Datetime To'] });
+        this.saveToLocalStorage();
     },
 
     /**
@@ -100,6 +143,7 @@ const DataHelper = {
     updateEvent(id, updatedFields) {
         const events = this.getEvents().map(e => e.ID === id ? { ...e, ...updatedFields } : e);
         this.workbook.Sheets['event'] = XLSX.utils.json_to_sheet(events, { header: ['ID', 'Event Name', 'Event Type', 'Datetime From', 'Datetime To'] });
+        this.saveToLocalStorage();
     },
 
     /**
@@ -109,6 +153,7 @@ const DataHelper = {
     deleteEvent(id) {
         const events = this.getEvents().filter(e => e.ID !== id);
         this.workbook.Sheets['event'] = XLSX.utils.json_to_sheet(events, { header: ['ID', 'Event Name', 'Event Type', 'Datetime From', 'Datetime To'] });
+        this.saveToLocalStorage();
     },
 
     /**
@@ -124,7 +169,12 @@ const DataHelper = {
      * @param {Array} matrix
      */
     setAttendanceMatrix(matrix) {
+        // Remove empty rows (all cells except ID are empty/falsy)
+        if (Array.isArray(matrix) && matrix.length > 1) {
+            matrix = [matrix[0]].concat(matrix.slice(1).filter(row => row[0] && row.slice(1).some(cell => cell && cell.toString().trim() !== '')));
+        }
         this.workbook.Sheets['attendance'] = XLSX.utils.aoa_to_sheet(matrix);
+        this.saveToLocalStorage();
     },
 
     /**
@@ -144,7 +194,45 @@ const DataHelper = {
                 break;
             }
         }
-        this.setAttendanceMatrix(matrix);
-    }
+        this.setAttendanceMatrix(matrix); // setAttendanceMatrix will save to localStorage
+    },
+
+    /**
+     * Save the current workbook to localStorage
+     */
+    saveToLocalStorage() {
+        if (!this.workbook) return;
+        // Write workbook to base64 string
+        const wbout = XLSX.write(this.workbook, { bookType: 'xlsx', type: 'base64' });
+        localStorage.setItem('attendanceWorkbook', wbout);
+    },
+
+    /**
+     * Load workbook from localStorage (if exists)
+     * @returns {Object|null}
+     */
+    loadFromLocalStorage() {
+        const wbout = localStorage.getItem('attendanceWorkbook');
+        if (!wbout) return null;
+        // Read workbook from base64 string
+        return XLSX.read(wbout, { type: 'base64' });
+    },
+
+    //add a method to save the workbook to a file
+    downloadWorkbook(filename = 'attendance_updated.xlsx') {
+        if (!this.workbook) return;
+        const wbout = XLSX.write(this.workbook, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    },
+
+
 };
 

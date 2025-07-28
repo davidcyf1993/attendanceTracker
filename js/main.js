@@ -16,9 +16,9 @@ function showNotification(message, type) {
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     // Auto remove after 3 seconds
     setTimeout(() => {
         if (notification.parentNode) {
@@ -27,29 +27,25 @@ function showNotification(message, type) {
     }, 3000);
 }
 
-// Show Save Attendance icon button after upload and trigger form submit
-function setupSaveAttendanceTabBtn() {
-    const saveBtn = document.getElementById('saveAttendanceTabBtn');
-    saveBtn.classList.add('d-none'); // Hide by default
-    saveBtn.addEventListener('click', function() {
-        // Trigger submit on the attendance form in the Tick Attendance tab
-        const form = document.getElementById('attendanceForm');
-        if (form) form.requestSubmit();
-    });
-}
 
-document.addEventListener('DOMContentLoaded', function() {
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Try to restore from localStorage if possible
+    if (typeof DataHelper !== 'undefined' && DataHelper.init && DataHelper.init()) {
+        if (typeof AttendanceTickingManager !== 'undefined' && AttendanceTickingManager.enableAppUIAfterWorkbookLoad) {
+            AttendanceTickingManager.enableAppUIAfterWorkbookLoad();
+        }
+    }
+
     // Initialize download template functionality
     if (typeof DownloadTemplateManager !== 'undefined') {
         DownloadTemplateManager.init();
     }
-    
+
     // Initialize attendance ticking functionality
     if (typeof AttendanceTickingManager !== 'undefined') {
         AttendanceTickingManager.init();
     }
-    
-    setupSaveAttendanceTabBtn();
 
     // Add sidebar toggle button for mobile
     function ensureSidebarToggleBtn() {
@@ -71,8 +67,14 @@ document.addEventListener('DOMContentLoaded', function() {
     ensureSidebarToggleBtn();
     window.addEventListener('resize', ensureSidebarToggleBtn);
 
+    // add event listener to the save button
+    document.getElementById('saveAttendanceTabBtn').addEventListener('click', function () {
+        console.log('save button clicked');
+        DataHelper.downloadWorkbook();
+    });
+
     // Sidebar toggle logic (robust)
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         const sidebar = document.querySelector('.nav-tabs');
         const toggleBtn = document.getElementById('sidebarToggleBtn');
         if (toggleBtn && (e.target === toggleBtn || toggleBtn.contains(e.target))) {
@@ -109,17 +111,3 @@ document.addEventListener('DOMContentLoaded', function() {
     observer.observe(document.body, { childList: true, subtree: true });
 });
 
-// After upload, show the save icon button
-function showSaveAttendanceTabBtn() {
-    const saveBtn = document.getElementById('saveAttendanceTabBtn');
-    if (saveBtn) saveBtn.classList.remove('d-none');
-}
-
-// Patch AttendanceTickingManager.handleFileUpload to show the button after upload
-if (typeof AttendanceTickingManager !== 'undefined') {
-    const origHandleFileUpload = AttendanceTickingManager.handleFileUpload.bind(AttendanceTickingManager);
-    AttendanceTickingManager.handleFileUpload = function(fileInputId, statusElementId, sectionElementId) {
-        origHandleFileUpload(fileInputId, statusElementId, sectionElementId);
-        showSaveAttendanceTabBtn();
-    };
-}

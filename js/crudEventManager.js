@@ -33,13 +33,13 @@ const CrudEventManager = {
         let sortKey = this._sortKey || 'ID';
         let sortDir = this._sortDir || 1;
         // Use filteredSheet if search is active
-        let filter = (this._searchText || '').toLowerCase();
+        let filter = String(this._searchText || '').toLowerCase();
         let filteredSheet = [...DataHelper.getEvents()];
         if (filter) {
             filteredSheet = filteredSheet.filter(e =>
-                (e['Event Name'] || '').toLowerCase().includes(filter) ||
-                (e['Event Type'] || '').toLowerCase().includes(filter) ||
-                (e['ID'] || '').toLowerCase().includes(filter)
+                (e['Event Name'] || '').toString().toLowerCase().includes(filter) ||
+                (e['Event Type'] || '').toString().toLowerCase().includes(filter) ||
+                (e['ID'] || '').toString().toLowerCase().includes(filter)
             );
         }
         let sortedSheet = filteredSheet.sort((a, b) => {
@@ -50,8 +50,8 @@ const CrudEventManager = {
                 av = av === null ? -1 : av;
                 bv = bv === null ? -1 : bv;
             } else {
-                av = (a[sortKey] || '').toLowerCase();
-                bv = (b[sortKey] || '').toLowerCase();
+                av = (a[sortKey] || '').toString().toLowerCase();
+                bv = (b[sortKey] || '').toString().toLowerCase();
             }
             if (av < bv) return -1 * sortDir;
             if (av > bv) return 1 * sortDir;
@@ -132,7 +132,7 @@ const CrudEventManager = {
 
     showEventForm(id) {
         const section = document.getElementById('crudEventSection');
-        let ev = id ? DataHelper.getEvents().find(e => e['ID'] === id) : { 'ID': '', 'Event Name': '', 'Event Type': '', 'Datetime From': '', 'Datetime To': '' };
+        let ev = id ? DataHelper.getEvents().find(e => String(e['ID']) === String(id)) : { 'ID': '', 'Event Name': '', 'Event Type': '', 'Datetime From': '', 'Datetime To': '' };
         let isEdit = !!id;
         section.innerHTML = `<form id="eventForm">
             <div class="mb-3">
@@ -178,7 +178,7 @@ const CrudEventManager = {
         if (isEdit) {
             DataHelper.updateEvent(id, { 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
         } else {
-            if (DataHelper.getEvents().some(e => e['ID'] === id)) {
+            if (DataHelper.getEvents().some(e => String(e['ID']) === String(id))) {
                 showNotification('ID already exists.', 'danger');
                 return;
             }
