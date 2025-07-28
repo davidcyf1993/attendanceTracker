@@ -264,7 +264,12 @@ const DataHelper = {
             // ID doesn't end with a number, add 1 to the entire ID
             return String(maxId) + '1';
         }
-    }
+    },    
+    getUniqueEventTypes() {
+        const events = this.getEvents();
+        const eventTypes = events.map(event => event['Event Type']).filter(type => type && type.toString().trim() !== '');
+        return [...new Set(eventTypes)];
+    },
 
 };
 

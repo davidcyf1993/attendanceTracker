@@ -203,11 +203,19 @@ const AttendanceTickingManager = {
         const container = document.getElementById('createEventFormContainer');
         if (!container) return;
         
+        // Get existing event types for typeahead
+        const existingEventTypes = [...new Set(DataHelper.getEvents().map(e => e['Event Type']).filter(type => type && type.trim()))];
+        
         // Simple inline form
         container.innerHTML = `
             <form id="inlineCreateEventForm">
                 <div class="mb-2"><input type="text" class="form-control" id="newEventName" placeholder="Event Name" required></div>
-                <div class="mb-2"><input type="text" class="form-control" id="newEventType" placeholder="Event Type" required></div>
+                <div class="mb-2 position-relative">
+                    <input type="text" class="form-control" id="newEventType" placeholder="Event Type" required list="newEventTypeSuggestions" autocomplete="off">
+                    <datalist id="newEventTypeSuggestions">
+                        ${existingEventTypes.map(type => `<option value="${type}">`).join('')}
+                    </datalist>
+                </div>
                 <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventFrom" required></div>
                 <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventTo" required></div>
                 <button type="submit" class="btn btn-primary">Create Event</button>
@@ -248,6 +256,9 @@ const AttendanceTickingManager = {
             localStorage.setItem('tickAttendanceSelectedEventId', newId);
             AttendanceTickingManager.showAttendanceTicking(sectionElementId);
         });
+        
+        // Initialize typeahead functionality for newEventType
+        this.initNewEventTypeTypeahead();
     },
 
     renderTicking(eventId) {
@@ -391,4 +402,111 @@ const AttendanceTickingManager = {
         showNotification('Attendance saved and file downloaded!', 'success');
         document.getElementById('saveStatus').innerHTML = '<div class="alert alert-success">Attendance saved and file downloaded!</div>';
     },
+
+    initNewEventTypeTypeahead() {
+        const input = document.getElementById('newEventType');
+        if (!input) return;
+
+        // Get existing event types
+        const existingEventTypes = [...new Set(DataHelper.getEvents().map(e => e['Event Type']).filter(type => type && type.trim()))];
+        
+        // Create dropdown container
+        const dropdownContainer = document.createElement('div');
+        dropdownContainer.className = 'position-absolute w-100 bg-white border rounded shadow-sm';
+        dropdownContainer.style.cssText = 'top: 100%; left: 0; z-index: 1000; max-height: 200px; overflow-y: auto; display: none;';
+        dropdownContainer.id = 'newEventTypeDropdown';
+        
+        // Insert dropdown after input
+        input.parentNode.appendChild(dropdownContainer);
+        
+        // Function to show suggestions
+        const showSuggestions = (query) => {
+            let filteredTypes;
+            
+            if (!query.trim()) {
+                // Show all options when input is empty
+                filteredTypes = existingEventTypes;
+            } else {
+                // Filter based on query
+                filteredTypes = existingEventTypes.filter(type => 
+                    type.toLowerCase().includes(query.toLowerCase())
+                );
+            }
+            
+            if (filteredTypes.length === 0) {
+                dropdownContainer.style.display = 'none';
+                return;
+            }
+            
+            dropdownContainer.innerHTML = filteredTypes.map(type => 
+                `<div class="dropdown-item p-2 cursor-pointer" data-value="${type}">${type}</div>`
+            ).join('');
+            
+            dropdownContainer.style.display = 'block';
+            
+            // Add hover effects
+            dropdownContainer.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('mouseenter', () => {
+                    item.style.backgroundColor = '#f8f9fa';
+                });
+                item.addEventListener('mouseleave', () => {
+                    item.style.backgroundColor = '';
+                });
+                item.addEventListener('click', () => {
+                    input.value = item.dataset.value;
+                    dropdownContainer.style.display = 'none';
+                    input.focus();
+                });
+            });
+        };
+        
+        // Event listeners
+        input.addEventListener('input', (e) => {
+            showSuggestions(e.target.value);
+        });
+        
+        input.addEventListener('focus', () => {
+            showSuggestions(input.value);
+        });
+        
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !dropdownContainer.contains(e.target)) {
+                dropdownContainer.style.display = 'none';
+            }
+        });
+        
+        // Keyboard navigation
+        input.addEventListener('keydown', (e) => {
+            const visibleItems = dropdownContainer.querySelectorAll('.dropdown-item');
+            const currentIndex = Array.from(visibleItems).findIndex(item => 
+                item.style.backgroundColor === 'rgb(248, 249, 250)'
+            );
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (visibleItems.length > 0) {
+                    const nextIndex = currentIndex < visibleItems.length - 1 ? currentIndex + 1 : 0;
+                    visibleItems.forEach(item => item.style.backgroundColor = '');
+                    visibleItems[nextIndex].style.backgroundColor = '#f8f9fa';
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (visibleItems.length > 0) {
+                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : visibleItems.length - 1;
+                    visibleItems.forEach(item => item.style.backgroundColor = '');
+                    visibleItems[prevIndex].style.backgroundColor = '#f8f9fa';
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const selectedItem = dropdownContainer.querySelector('.dropdown-item[style*="background-color: rgb(248, 249, 250)"]');
+                if (selectedItem) {
+                    input.value = selectedItem.dataset.value;
+                    dropdownContainer.style.display = 'none';
+                }
+            } else if (e.key === 'Escape') {
+                dropdownContainer.style.display = 'none';
+            }
+        });
+    }
 };
