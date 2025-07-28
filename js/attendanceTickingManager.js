@@ -1,7 +1,6 @@
 // attendanceTickingManager.js - Handles file upload and attendance management
 
 const AttendanceTickingManager = {
-    workbook: null,
     attendeeSheet: [],
     eventSheet: [],
     attMatrix: [],
@@ -57,6 +56,7 @@ const AttendanceTickingManager = {
             // ...existing code to parse workbook...
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
+            DataHelper.init(workbook);
             // Enable Tick Attendance tab
             const tickTab = document.getElementById('tick-tab');
             if (tickTab) {
@@ -90,7 +90,7 @@ const AttendanceTickingManager = {
                 crudAttendeeTab.classList.remove('disabled');
                 crudAttendeeTab.addEventListener('click', () => {
                     if (typeof CrudAttendeeManager !== 'undefined') {
-                        CrudAttendeeManager.init(workbook);
+                        CrudAttendeeManager.init();
                     }
                 });
             }
@@ -103,20 +103,18 @@ const AttendanceTickingManager = {
                 crudEventTab.classList.remove('disabled');
                 crudEventTab.addEventListener('click', () => {
                     if (typeof CrudEventManager !== 'undefined') {
-                        CrudEventManager.init(workbook);
+                        CrudEventManager.init();
                     }
                 });
             }
             // Show ticking UI in Tick tab, not Home tab
-            this.showAttendanceTicking(workbook, 'attendanceSectionTick');
+            this.showAttendanceTicking('attendanceSectionTick');
             // Optionally, clear Home tab's attendanceSection
             const homeAttSection = document.getElementById('attendanceSection');
             if (homeAttSection) homeAttSection.style.display = 'none';
             // Initialize AddEventManager with current workbook, eventSheet, attMatrix
             if (typeof AddEventManager !== 'undefined') {
-                const eventSheet = XLSX.utils.sheet_to_json(workbook.Sheets['event']);
-                const attMatrix = XLSX.utils.sheet_to_json(workbook.Sheets['attendance'], {header:1});
-                AddEventManager.init(workbook, eventSheet, attMatrix);
+                AddEventManager.init();
             }
             // Switch to Tick Attendance tab automatically
             if (typeof bootstrap !== 'undefined') {
@@ -129,22 +127,21 @@ const AttendanceTickingManager = {
 
     // Utility to get sorted events by start datetime desc
     getSortedEvents() {
-        return this.eventSheet.slice().sort((a, b) => {
+        return DataHelper.getEvents().slice().sort((a, b) => {
             const aTime = new Date(a['Datetime From'] || a['Datetime from'] || a['Start'] || 0).getTime();
             const bTime = new Date(b['Datetime From'] || b['Datetime from'] || b['Start'] || 0).getTime();
             return bTime - aTime;
         });
     },
 
-    showAttendanceTicking(workbook, sectionElementId) {
-        this.workbook = workbook;
-        this.attendeeSheet = XLSX.utils.sheet_to_json(workbook.Sheets['attendee']);
-        this.eventSheet = XLSX.utils.sheet_to_json(workbook.Sheets['event']);
+    showAttendanceTicking(sectionElementId) {
+        this.attendeeSheet = DataHelper.getAttendees();
+        this.eventSheet = DataHelper.getEvents();
         if (!this.attendeeSheet.length) {
             document.getElementById(sectionElementId).innerHTML = '<div class="alert alert-warning">No attendees found in the attendee sheet.</div>';
             return;
         }
-        this.attMatrix = XLSX.utils.sheet_to_json(workbook.Sheets['attendance'], {header:1});
+        this.attMatrix = DataHelper.getAttendanceMatrix();
         // Two-stage UI: Stage 1 = select/create event, Stage 2 = tick attendance
         let selectedEventId = localStorage.getItem('tickAttendanceSelectedEventId') || null;
         const section = document.getElementById(sectionElementId);
@@ -170,7 +167,7 @@ const AttendanceTickingManager = {
             document.getElementById('eventSelect').addEventListener('change', function() {
                 if (this.value) {
                     localStorage.setItem('tickAttendanceSelectedEventId', this.value);
-                    AttendanceTickingManager.showAttendanceTicking(workbook, sectionElementId);
+                    AttendanceTickingManager.showAttendanceTicking(sectionElementId);
                 }
             });
             document.getElementById('createNewEventBtn').addEventListener('click', function(e) {
@@ -182,7 +179,7 @@ const AttendanceTickingManager = {
             section.innerHTML = `<div class="mb-3 text-end"><button class="btn btn-secondary" id="changeEventBtn"><i class="bi bi-arrow-left-circle"></i> Change Event</button></div><div id="attendanceTick"></div><div id="saveStatus"></div>`;
             document.getElementById('changeEventBtn').addEventListener('click', function() {
                 localStorage.removeItem('tickAttendanceSelectedEventId');
-                AttendanceTickingManager.showAttendanceTicking(workbook, sectionElementId);
+                AttendanceTickingManager.showAttendanceTicking(sectionElementId);
             });
             this.renderTicking(selectedEventId);
         }
@@ -201,7 +198,7 @@ const AttendanceTickingManager = {
             AddEventManager.addNewEvent = () => {
                 origAddNewEvent();
                 // Find the latest event (by max ID)
-                let events = XLSX.utils.sheet_to_json(this.workbook.Sheets['event']);
+                let events = DataHelper.getEvents();
                 let maxId = events.reduce((max, ev) => {
                     let num = parseInt((ev.ID||'').replace('E',''));
                     return (!isNaN(num) && num > max) ? num : max;
@@ -209,7 +206,7 @@ const AttendanceTickingManager = {
                 let newId = 'E' + String(maxId).padStart(3, '0');
                 localStorage.setItem('tickAttendanceSelectedEventId', newId);
                 // Refresh UI to stage 2
-                AttendanceTickingManager.showAttendanceTicking(this.workbook, sectionElementId);
+                AttendanceTickingManager.showAttendanceTicking(sectionElementId);
             };
             // Move AddEventManager form into our container
             const addEventSection = document.getElementById('addEventSection');
@@ -239,7 +236,7 @@ const AttendanceTickingManager = {
                     showNotification('Please fill in all event fields.', 'danger');
                     return;
                 }
-                let events = XLSX.utils.sheet_to_json(AttendanceTickingManager.workbook.Sheets['event']);
+                let events = DataHelper.getEvents();
                 let maxId = 0;
                 events.forEach(ev => {
                     const num = parseInt((ev.ID||'').replace('E',''));
@@ -248,10 +245,9 @@ const AttendanceTickingManager = {
                 const newId = 'E' + String(maxId + 1).padStart(3, '0');
                 events.push({ ID: newId, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
                 // Update event sheet
-                const wsEvent = XLSX.utils.json_to_sheet(events, { header: ["ID", "Event Name", "Event Type", "Datetime From", "Datetime To"] });
-                AttendanceTickingManager.workbook.Sheets['event'] = wsEvent;
+                DataHelper.updateEvents(events);
                 // Add new event column to attendance if not present
-                let attMatrix = XLSX.utils.sheet_to_json(AttendanceTickingManager.workbook.Sheets['attendance'], {header:1});
+                let attMatrix = DataHelper.getAttendanceMatrix();
                 let header = attMatrix[0] || ["Attendee ID"];
                 if (!header.includes(newId)) {
                     header.push(newId);
@@ -260,33 +256,31 @@ const AttendanceTickingManager = {
                     }
                 }
                 // Update workbook attendance
-                const wsAtt = XLSX.utils.aoa_to_sheet(attMatrix);
-                AttendanceTickingManager.workbook.Sheets['attendance'] = wsAtt;
+                DataHelper.updateAttendanceMatrix(attMatrix);
                 showNotification('Event added successfully!', 'success');
                 localStorage.setItem('tickAttendanceSelectedEventId', newId);
-                AttendanceTickingManager.showAttendanceTicking(AttendanceTickingManager.workbook, sectionElementId);
+                AttendanceTickingManager.showAttendanceTicking(sectionElementId);
             });
         }
     },
 
     // Utility to get sorted events by start datetime desc
     getSortedEvents() {
-        return this.eventSheet.slice().sort((a, b) => {
+        return DataHelper.getEvents().slice().sort((a, b) => {
             const aTime = new Date(a['Datetime From'] || a['Datetime from'] || a['Start'] || 0).getTime();
             const bTime = new Date(b['Datetime From'] || b['Datetime from'] || b['Start'] || 0).getTime();
             return bTime - aTime;
         });
     },
 
-    showAttendanceTicking(workbook, sectionElementId) {
-        this.workbook = workbook;
-        this.attendeeSheet = XLSX.utils.sheet_to_json(workbook.Sheets['attendee']);
-        this.eventSheet = XLSX.utils.sheet_to_json(workbook.Sheets['event']);
+    showAttendanceTicking(sectionElementId) {
+        this.attendeeSheet = DataHelper.getAttendees();
+        this.eventSheet = DataHelper.getEvents();
         if (!this.attendeeSheet.length) {
             document.getElementById(sectionElementId).innerHTML = '<div class="alert alert-warning">No attendees found in the attendee sheet.</div>';
             return;
         }
-        this.attMatrix = XLSX.utils.sheet_to_json(workbook.Sheets['attendance'], {header:1});
+        this.attMatrix = DataHelper.getAttendanceMatrix();
         // Two-stage UI: Stage 1 = select/create event, Stage 2 = tick attendance
         let selectedEventId = localStorage.getItem('tickAttendanceSelectedEventId') || null;
         const section = document.getElementById(sectionElementId);
@@ -312,7 +306,7 @@ const AttendanceTickingManager = {
             document.getElementById('eventSelect').addEventListener('change', function() {
                 if (this.value) {
                     localStorage.setItem('tickAttendanceSelectedEventId', this.value);
-                    AttendanceTickingManager.showAttendanceTicking(workbook, sectionElementId);
+                    AttendanceTickingManager.showAttendanceTicking(sectionElementId);
                 }
             });
             document.getElementById('createNewEventBtn').addEventListener('click', function(e) {
@@ -324,7 +318,7 @@ const AttendanceTickingManager = {
             section.innerHTML = `<div class="mb-3 text-end"><button class="btn btn-secondary" id="changeEventBtn"><i class="bi bi-arrow-left-circle"></i> Change Event</button></div><div id="attendanceTick"></div><div id="saveStatus"></div>`;
             document.getElementById('changeEventBtn').addEventListener('click', function() {
                 localStorage.removeItem('tickAttendanceSelectedEventId');
-                AttendanceTickingManager.showAttendanceTicking(workbook, sectionElementId);
+                AttendanceTickingManager.showAttendanceTicking(sectionElementId);
             });
             this.renderTicking(selectedEventId);
         }
@@ -343,7 +337,7 @@ const AttendanceTickingManager = {
             AddEventManager.addNewEvent = () => {
                 origAddNewEvent();
                 // Find the latest event (by max ID)
-                let events = XLSX.utils.sheet_to_json(this.workbook.Sheets['event']);
+                let events = DataHelper.getEvents();
                 let maxId = events.reduce((max, ev) => {
                     let num = parseInt((ev.ID||'').replace('E',''));
                     return (!isNaN(num) && num > max) ? num : max;
@@ -351,7 +345,7 @@ const AttendanceTickingManager = {
                 let newId = 'E' + String(maxId).padStart(3, '0');
                 localStorage.setItem('tickAttendanceSelectedEventId', newId);
                 // Refresh UI to stage 2
-                AttendanceTickingManager.showAttendanceTicking(this.workbook, sectionElementId);
+                AttendanceTickingManager.showAttendanceTicking(sectionElementId);
             };
             // Move AddEventManager form into our container
             const addEventSection = document.getElementById('addEventSection');
@@ -381,7 +375,7 @@ const AttendanceTickingManager = {
                     showNotification('Please fill in all event fields.', 'danger');
                     return;
                 }
-                let events = XLSX.utils.sheet_to_json(AttendanceTickingManager.workbook.Sheets['event']);
+                let events = DataHelper.getEvents();
                 let maxId = 0;
                 events.forEach(ev => {
                     const num = parseInt((ev.ID||'').replace('E',''));
@@ -390,10 +384,9 @@ const AttendanceTickingManager = {
                 const newId = 'E' + String(maxId + 1).padStart(3, '0');
                 events.push({ ID: newId, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
                 // Update event sheet
-                const wsEvent = XLSX.utils.json_to_sheet(events, { header: ["ID", "Event Name", "Event Type", "Datetime From", "Datetime To"] });
-                AttendanceTickingManager.workbook.Sheets['event'] = wsEvent;
+                DataHelper.updateEvents(events);
                 // Add new event column to attendance if not present
-                let attMatrix = XLSX.utils.sheet_to_json(AttendanceTickingManager.workbook.Sheets['attendance'], {header:1});
+                let attMatrix = DataHelper.getAttendanceMatrix();
                 let header = attMatrix[0] || ["Attendee ID"];
                 if (!header.includes(newId)) {
                     header.push(newId);
@@ -402,11 +395,10 @@ const AttendanceTickingManager = {
                     }
                 }
                 // Update workbook attendance
-                const wsAtt = XLSX.utils.aoa_to_sheet(attMatrix);
-                AttendanceTickingManager.workbook.Sheets['attendance'] = wsAtt;
+                DataHelper.updateAttendanceMatrix(attMatrix);
                 showNotification('Event added successfully!', 'success');
                 localStorage.setItem('tickAttendanceSelectedEventId', newId);
-                AttendanceTickingManager.showAttendanceTicking(AttendanceTickingManager.workbook, sectionElementId);
+                AttendanceTickingManager.showAttendanceTicking(sectionElementId);
             });
         }
     },
@@ -516,11 +508,10 @@ const AttendanceTickingManager = {
         });
         
         // Write back to workbook
-        const wsAtt = XLSX.utils.aoa_to_sheet(this.attMatrix);
-        this.workbook.Sheets['attendance'] = wsAtt;
+        DataHelper.updateAttendanceMatrix(this.attMatrix);
         
         // Download updated file
-        const wbout = XLSX.write(this.workbook, {bookType:'xlsx', type:'array'});
+        const wbout = XLSX.write(DataHelper.getWorkbook(), {bookType:'xlsx', type:'array'});
         const blob = new Blob([wbout], {type: "application/octet-stream"});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

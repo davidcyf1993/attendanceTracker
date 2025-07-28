@@ -1,12 +1,10 @@
 // crudEventManager.js - Handles CRUD for Events
 
 const CrudEventManager = {
-    workbook: null,
     eventSheet: [],
 
-    init(workbook) {
-        this.workbook = workbook;
-        this.eventSheet = XLSX.utils.sheet_to_json(workbook.Sheets['event']);
+    init() {
+        this.eventSheet = DataHelper.getEvents();
         this.renderCrudEvent();
     },
 
@@ -15,7 +13,7 @@ const CrudEventManager = {
         if (!section) return;
         // Remove searchBox from JS, assume it is in HTML
         // Calculate attendance % for each event
-        let attMatrix = XLSX.utils.sheet_to_json(this.workbook.Sheets['attendance'], {header:1});
+        let attMatrix = DataHelper.getAttendanceMatrix();
         let header = attMatrix[0] || [];
         let rows = attMatrix.slice(1);
         let eventIdToPercent = {};
@@ -36,7 +34,7 @@ const CrudEventManager = {
         let sortDir = this._sortDir || 1;
         // Use filteredSheet if search is active
         let filter = (this._searchText || '').toLowerCase();
-        let filteredSheet = [...this.eventSheet];
+        let filteredSheet = [...DataHelper.getEvents()];
         if (filter) {
             filteredSheet = filteredSheet.filter(e =>
                 (e['Event Name'] || '').toLowerCase().includes(filter) ||
@@ -134,7 +132,7 @@ const CrudEventManager = {
 
     showEventForm(id) {
         const section = document.getElementById('crudEventSection');
-        let ev = id ? this.eventSheet.find(e => e['ID'] === id) : { 'ID': '', 'Event Name': '', 'Event Type': '', 'Datetime From': '', 'Datetime To': '' };
+        let ev = id ? DataHelper.getEvents().find(e => e['ID'] === id) : { 'ID': '', 'Event Name': '', 'Event Type': '', 'Datetime From': '', 'Datetime To': '' };
         let isEdit = !!id;
         section.innerHTML = `<form id="eventForm">
             <div class="mb-3">
@@ -178,30 +176,21 @@ const CrudEventManager = {
             return;
         }
         if (isEdit) {
-            let ev = this.eventSheet.find(e => e['ID'] === id);
-            ev['Event Name'] = name;
-            ev['Event Type'] = type;
-            ev['Datetime From'] = from;
-            ev['Datetime To'] = to;
+            DataHelper.updateEvent(id, { 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
         } else {
-            if (this.eventSheet.some(e => e['ID'] === id)) {
+            if (DataHelper.getEvents().some(e => e['ID'] === id)) {
                 showNotification('ID already exists.', 'danger');
                 return;
             }
-            this.eventSheet.push({ 'ID': id, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
+            DataHelper.addEvent({ 'ID': id, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
         }
-        // Update workbook
-        const ws = XLSX.utils.json_to_sheet(this.eventSheet, { header: ['ID', 'Event Name', 'Event Type', 'Datetime From', 'Datetime To'] });
-        this.workbook.Sheets['event'] = ws;
         showNotification('Event saved.', 'success');
         this.renderCrudEvent();
     },
 
     deleteEvent(id) {
         if (!confirm('Delete this event?')) return;
-        this.eventSheet = this.eventSheet.filter(e => e['ID'] !== id);
-        const ws = XLSX.utils.json_to_sheet(this.eventSheet, { header: ['ID', 'Event Name', 'Event Type', 'Datetime From', 'Datetime To'] });
-        this.workbook.Sheets['event'] = ws;
+        DataHelper.deleteEvent(id);
         showNotification('Event deleted.', 'success');
         this.renderCrudEvent();
     }

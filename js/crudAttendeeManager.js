@@ -1,12 +1,10 @@
 // crudAttendeeManager.js - Handles CRUD for Attendees
 
 const CrudAttendeeManager = {
-    workbook: null,
     attendeeSheet: [],
 
-    init(workbook) {
-        this.workbook = workbook;
-        this.attendeeSheet = XLSX.utils.sheet_to_json(workbook.Sheets['attendee']);
+    init() {
+        this.attendeeSheet = DataHelper.getAttendees();
         this.renderCrudAttendee();
     },
 
@@ -16,7 +14,7 @@ const CrudAttendeeManager = {
         let sortKey = this._sortKey || 'ID';
         let sortDir = this._sortDir || 1;
         let filter = (this._searchText || '').toLowerCase();
-        let filteredSheet = [...this.attendeeSheet];
+        let filteredSheet = [...DataHelper.getAttendees()];
         if (filter) {
             filteredSheet = filteredSheet.filter(a =>
                 (a['Full Name'] || '').toLowerCase().includes(filter) ||
@@ -98,7 +96,7 @@ const CrudAttendeeManager = {
 
     showAttendeeForm(id) {
         const section = document.getElementById('crudAttendeeSection');
-        let att = id ? this.attendeeSheet.find(a => a['ID'] === id) : { 'ID': '', 'Full Name': '', 'Nick Name': '' };
+        let att = id ? DataHelper.getAttendees().find(a => a['ID'] === id) : { 'ID': '', 'Full Name': '', 'Nick Name': '' };
         let isEdit = !!id;
         section.innerHTML = `<form id="attendeeForm">
             <div class="mb-3">
@@ -132,28 +130,21 @@ const CrudAttendeeManager = {
             return;
         }
         if (isEdit) {
-            let att = this.attendeeSheet.find(a => a['ID'] === id);
-            att['Full Name'] = fullName;
-            att['Nick Name'] = nickName;
+            DataHelper.updateAttendee(id, { 'Full Name': fullName, 'Nick Name': nickName });
         } else {
-            if (this.attendeeSheet.some(a => a['ID'] === id)) {
+            if (DataHelper.getAttendees().some(a => a['ID'] === id)) {
                 showNotification('ID already exists.', 'danger');
                 return;
             }
-            this.attendeeSheet.push({ 'ID': id, 'Full Name': fullName, 'Nick Name': nickName });
+            DataHelper.addAttendee({ 'ID': id, 'Full Name': fullName, 'Nick Name': nickName });
         }
-        // Update workbook
-        const ws = XLSX.utils.json_to_sheet(this.attendeeSheet, { header: ['ID', 'Full Name', 'Nick Name'] });
-        this.workbook.Sheets['attendee'] = ws;
         showNotification('Attendee saved.', 'success');
         this.renderCrudAttendee();
     },
 
     deleteAttendee(id) {
         if (!confirm('Delete this attendee?')) return;
-        this.attendeeSheet = this.attendeeSheet.filter(a => a['ID'] !== id);
-        const ws = XLSX.utils.json_to_sheet(this.attendeeSheet, { header: ['ID', 'Full Name', 'Nick Name'] });
-        this.workbook.Sheets['attendee'] = ws;
+        DataHelper.deleteAttendee(id);
         showNotification('Attendee deleted.', 'success');
         this.renderCrudAttendee();
     }

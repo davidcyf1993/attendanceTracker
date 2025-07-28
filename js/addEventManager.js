@@ -1,22 +1,19 @@
 // addEventManager.js - Handles Add New Event functionality
 
 const AddEventManager = {
-    workbook: null,
     eventSheet: [],
     attMatrix: [],
 
-    init(workbook, eventSheet, attMatrix) {
-        this.workbook = workbook;
-        this.eventSheet = eventSheet;
-        this.attMatrix = attMatrix;
+    init() {
+        this.eventSheet = DataHelper.getEvents();
+        this.attMatrix = DataHelper.getAttendanceMatrix();
         this.renderAddEventForm();
     },
 
     renderAddEventForm() {
         const addEventSection = document.getElementById('addEventSection');
         if (!addEventSection) return;
-        // Collect unique event types from eventSheet, sorted by latest event start datetime
-        const sortedEvents = [...this.eventSheet]
+        const sortedEvents = [...DataHelper.getEvents()]
             .filter(ev => ev['Event Type'] && ev['Datetime From'])
             .sort((a, b) => new Date(b['Datetime From']) - new Date(a['Datetime From']));
         const eventTypes = Array.from(new Set(sortedEvents.map(ev => ev['Event Type'])));
@@ -62,37 +59,29 @@ const AddEventManager = {
             showNotification('Please fill in all event fields.', 'danger');
             return;
         }
-        if (!this.workbook) {
-            showNotification('No workbook loaded. Please upload an Excel file first.', 'danger');
-            return;
-        }
         // Generate new event ID
         let maxId = 0;
-        this.eventSheet.forEach(ev => {
+        DataHelper.getEvents().forEach(ev => {
             const num = parseInt(ev.ID.replace('E', ''));
             if (!isNaN(num) && num > maxId) maxId = num;
         });
         const newId = 'E' + String(maxId + 1).padStart(3, '0');
-        this.eventSheet.push({ ID: newId, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
-        // Update event sheet
-        const wsEvent = XLSX.utils.json_to_sheet(this.eventSheet, { header: ["ID", "Event Name", "Event Type", "Datetime From", "Datetime To"] });
-        this.workbook.Sheets['event'] = wsEvent;
+        DataHelper.addEvent({ ID: newId, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
         // Add new event column to attendance if not present
-        let header = this.attMatrix[0] || ["Attendee ID"];
+        let matrix = DataHelper.getAttendanceMatrix();
+        let header = matrix[0] || ["Attendee ID"];
         if (!header.includes(newId)) {
             header.push(newId);
-            for (let i = 1; i < this.attMatrix.length; ++i) {
-                this.attMatrix[i].push("");
+            for (let i = 1; i < matrix.length; ++i) {
+                matrix[i].push("");
             }
         }
-        // Update workbook attendance
-        const wsAtt = XLSX.utils.aoa_to_sheet(this.attMatrix);
-        this.workbook.Sheets['attendance'] = wsAtt;
+        DataHelper.setAttendanceMatrix(matrix);
         showNotification('Event added successfully!', 'success');
         this.renderAddEventForm();
         // Refresh event list in Tick Attendance tab if visible
         if (typeof AttendanceTickingManager !== 'undefined') {
-            AttendanceTickingManager.showAttendanceTicking(this.workbook, 'attendanceSectionTick');
+            AttendanceTickingManager.showAttendanceTicking('attendanceSectionTick');
         }
     }
 };

@@ -1,7 +1,6 @@
 // calcAttendanceManager.js - Handles Calculate Attendance tab functionality
 
 const CalcAttendanceManager = {
-    workbook: null,
     attendeeSheet: [],
     eventSheet: [],
     attMatrix: [],
@@ -10,11 +9,10 @@ const CalcAttendanceManager = {
         // Nothing to do on load
     },
 
-    showCalcAttendance(workbook, sectionElementId) {
-        this.workbook = workbook;
-        this.attendeeSheet = XLSX.utils.sheet_to_json(workbook.Sheets['attendee']);
-        this.eventSheet = XLSX.utils.sheet_to_json(workbook.Sheets['event']);
-        this.attMatrix = XLSX.utils.sheet_to_json(workbook.Sheets['attendance'], {header:1});
+    showCalcAttendance(sectionElementId) {
+        this.attendeeSheet = DataHelper.getAttendees();
+        this.eventSheet = DataHelper.getEvents();
+        this.attMatrix = DataHelper.getAttendanceMatrix();
         if (!this.attendeeSheet.length || !this.eventSheet.length || !this.attMatrix.length) {
             document.getElementById(sectionElementId).innerHTML = '<div class="alert alert-danger">Attendance data not loaded.</div>';
             return;
