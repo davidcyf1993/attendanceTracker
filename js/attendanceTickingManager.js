@@ -163,6 +163,17 @@ const AttendanceTickingManager = {
         let selectedEventId = localStorage.getItem('tickAttendanceSelectedEventId') || null;
         const section = document.getElementById(sectionElementId);
         section.style.display = '';
+        
+        // Check if selected event exists in current event sheet
+        if (selectedEventId) {
+            const eventExists = this.eventSheet.some(ev => String(ev['ID']) === String(selectedEventId));
+            if (!eventExists) {
+                // Event no longer exists, clear localStorage and show event selection
+                localStorage.removeItem('tickAttendanceSelectedEventId');
+                selectedEventId = null;
+            }
+        }
+        
         if (!selectedEventId) {
             // Stage 1: Select or create event
             let sortedEvents = this.getSortedEvents();
@@ -253,13 +264,9 @@ const AttendanceTickingManager = {
                     showNotification('Please fill in all event fields.', 'danger');
                     return;
                 }
-                let events = DataHelper.getEvents();
-                let maxId = 0;
-                events.forEach(ev => {
-                    const num = parseInt((ev.ID||'').replace('E',''));
-                    if (!isNaN(num) && num > maxId) maxId = num;
-                });
-                const newId = 'E' + String(maxId + 1).padStart(3, '0');
+                // Generate new event ID using DataHelper.getNewId
+                const eventIds = DataHelper.getEvents().map(ev => ev.ID);
+                const newId = DataHelper.getNewId(eventIds);
                 const newEvent = { ID: newId, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to };
                 // Update event sheet
                 DataHelper.addEvent(newEvent);

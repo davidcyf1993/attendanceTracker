@@ -234,5 +234,37 @@ const DataHelper = {
     },
 
 
+    getNewId(ids) {
+        if (!ids || ids.length === 0) {
+            return '1';
+        }
+        
+        // Find the maximum ID by comparing as strings
+        let maxId = ids[0];
+        for (let i = 1; i < ids.length; i++) {
+            if (String(ids[i]) > String(maxId)) {
+                maxId = ids[i];
+            }
+        }
+        
+        // Check if the ID is just a number
+        if (/^\d+$/.test(String(maxId))) {
+            // ID is just a number, increment it
+            return String(parseInt(maxId) + 1);
+        }
+        
+        // Check if the ID ends with a number
+        const match = String(maxId).match(/^(.+?)(\d+)$/);
+        if (match) {
+            // ID ends with a number, increment the number
+            const prefix = match[1];
+            const number = parseInt(match[2]);
+            return prefix + (number + 1);
+        } else {
+            // ID doesn't end with a number, add 1 to the entire ID
+            return String(maxId) + '1';
+        }
+    }
+
 };
 

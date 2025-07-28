@@ -98,10 +98,18 @@ const CrudAttendeeManager = {
         const section = document.getElementById('crudAttendeeSection');
         let att = id ? DataHelper.getAttendees().find(a => String(a['ID']) === String(id)) : { 'ID': '', 'Full Name': '', 'Nick Name': '' };
         let isEdit = !!id;
+        
+        // Generate new ID if creating new attendee
+        let newId = '';
+        if (!isEdit) {
+            const attendeeIds = DataHelper.getAttendees().map(a => a['ID']);
+            newId = DataHelper.getNewId(attendeeIds);
+        }
+        
         section.innerHTML = `<form id="attendeeForm">
             <div class="mb-3">
                 <label class="form-label">ID</label>
-                <input type="text" class="form-control" id="attendeeId" value="${att['ID'] || ''}" ${isEdit ? 'readonly' : ''} required />
+                <input type="text" class="form-control" id="attendeeId" value="${att['ID'] || newId}" ${isEdit ? 'readonly' : ''} required />
             </div>
             <div class="mb-3">
                 <label class="form-label">Full Name</label>

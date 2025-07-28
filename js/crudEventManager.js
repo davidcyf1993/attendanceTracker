@@ -134,10 +134,18 @@ const CrudEventManager = {
         const section = document.getElementById('crudEventSection');
         let ev = id ? DataHelper.getEvents().find(e => String(e['ID']) === String(id)) : { 'ID': '', 'Event Name': '', 'Event Type': '', 'Datetime From': '', 'Datetime To': '' };
         let isEdit = !!id;
+        
+        // Generate new ID if creating new event
+        let newId = '';
+        if (!isEdit) {
+            const eventIds = DataHelper.getEvents().map(e => e['ID']);
+            newId = DataHelper.getNewId(eventIds);
+        }
+        
         section.innerHTML = `<form id="eventForm">
             <div class="mb-3">
                 <label class="form-label">ID</label>
-                <input type="text" class="form-control" id="eventId" value="${ev['ID'] || ''}" ${isEdit ? 'readonly' : ''} required />
+                <input type="text" class="form-control" id="eventId" value="${ev['ID'] || newId}" ${isEdit ? 'readonly' : ''} required />
             </div>
             <div class="mb-3">
                 <label class="form-label">Event Name</label>

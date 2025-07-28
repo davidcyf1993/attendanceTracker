@@ -59,13 +59,9 @@ const AddEventManager = {
             showNotification('Please fill in all event fields.', 'danger');
             return;
         }
-        // Generate new event ID
-        let maxId = 0;
-        DataHelper.getEvents().forEach(ev => {
-            const num = parseInt(ev.ID.replace('E', ''));
-            if (!isNaN(num) && num > maxId) maxId = num;
-        });
-        const newId = 'E' + String(maxId + 1).padStart(3, '0');
+        // Generate new event ID using DataHelper.getNewId
+        const eventIds = DataHelper.getEvents().map(ev => ev.ID);
+        const newId = DataHelper.getNewId(eventIds);
         DataHelper.addEvent({ ID: newId, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
         // Add new event column to attendance if not present
         let matrix = DataHelper.getAttendanceMatrix();
