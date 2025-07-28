@@ -1,12 +1,10 @@
 // crudAttendeeManager.js - Handles CRUD for Attendees
 
 const CrudAttendeeManager = {
-    workbook: null,
     attendeeSheet: [],
 
-    init(workbook) {
-        this.workbook = workbook;
-        this.attendeeSheet = XLSX.utils.sheet_to_json(workbook.Sheets['attendee']);
+    init() {
+        this.attendeeSheet = DataHelper.getAttendees();
         this.renderCrudAttendee();
     },
 
@@ -15,18 +13,18 @@ const CrudAttendeeManager = {
         if (!section) return;
         let sortKey = this._sortKey || 'ID';
         let sortDir = this._sortDir || 1;
-        let filter = (this._searchText || '').toLowerCase();
-        let filteredSheet = [...this.attendeeSheet];
+        let filter = String(this._searchText || '').toLowerCase();
+        let filteredSheet = [...DataHelper.getAttendees()];
         if (filter) {
             filteredSheet = filteredSheet.filter(a =>
-                (a['Full Name'] || '').toLowerCase().includes(filter) ||
-                (a['Nick Name'] || '').toLowerCase().includes(filter) ||
-                (a['ID'] || '').toLowerCase().includes(filter)
+                (a['Full Name'] || '').toString().toLowerCase().includes(filter) ||
+                (a['Nick Name'] || '').toString().toLowerCase().includes(filter) ||
+                (a['ID'] || '').toString().toLowerCase().includes(filter)
             );
         }
         let sortedSheet = filteredSheet.sort((a, b) => {
-            let av = (a[sortKey] || '').toLowerCase();
-            let bv = (b[sortKey] || '').toLowerCase();
+            let av = (a[sortKey] || '').toString().toLowerCase();
+            let bv = (b[sortKey] || '').toString().toLowerCase();
             if (av < bv) return -1 * sortDir;
             if (av > bv) return 1 * sortDir;
             return 0;
@@ -98,12 +96,20 @@ const CrudAttendeeManager = {
 
     showAttendeeForm(id) {
         const section = document.getElementById('crudAttendeeSection');
-        let att = id ? this.attendeeSheet.find(a => a['ID'] === id) : { 'ID': '', 'Full Name': '', 'Nick Name': '' };
+        let att = id ? DataHelper.getAttendees().find(a => String(a['ID']) === String(id)) : { 'ID': '', 'Full Name': '', 'Nick Name': '' };
         let isEdit = !!id;
+        
+        // Generate new ID if creating new attendee
+        let newId = '';
+        if (!isEdit) {
+            const attendeeIds = DataHelper.getAttendees().map(a => a['ID']);
+            newId = DataHelper.getNewId(attendeeIds);
+        }
+        
         section.innerHTML = `<form id="attendeeForm">
             <div class="mb-3">
                 <label class="form-label">ID</label>
-                <input type="text" class="form-control" id="attendeeId" value="${att['ID'] || ''}" ${isEdit ? 'readonly' : ''} required />
+                <input type="text" class="form-control" id="attendeeId" value="${att['ID'] || newId}" ${isEdit ? 'readonly' : ''} required />
             </div>
             <div class="mb-3">
                 <label class="form-label">Full Name</label>
@@ -132,28 +138,21 @@ const CrudAttendeeManager = {
             return;
         }
         if (isEdit) {
-            let att = this.attendeeSheet.find(a => a['ID'] === id);
-            att['Full Name'] = fullName;
-            att['Nick Name'] = nickName;
+            DataHelper.updateAttendee(id, { 'Full Name': fullName, 'Nick Name': nickName });
         } else {
-            if (this.attendeeSheet.some(a => a['ID'] === id)) {
+            if (DataHelper.getAttendees().some(a => String(a['ID']) === String(id))) {
                 showNotification('ID already exists.', 'danger');
                 return;
             }
-            this.attendeeSheet.push({ 'ID': id, 'Full Name': fullName, 'Nick Name': nickName });
+            DataHelper.addAttendee({ 'ID': id, 'Full Name': fullName, 'Nick Name': nickName });
         }
-        // Update workbook
-        const ws = XLSX.utils.json_to_sheet(this.attendeeSheet, { header: ['ID', 'Full Name', 'Nick Name'] });
-        this.workbook.Sheets['attendee'] = ws;
         showNotification('Attendee saved.', 'success');
         this.renderCrudAttendee();
     },
 
     deleteAttendee(id) {
         if (!confirm('Delete this attendee?')) return;
-        this.attendeeSheet = this.attendeeSheet.filter(a => a['ID'] !== id);
-        const ws = XLSX.utils.json_to_sheet(this.attendeeSheet, { header: ['ID', 'Full Name', 'Nick Name'] });
-        this.workbook.Sheets['attendee'] = ws;
+        DataHelper.deleteAttendee(id);
         showNotification('Attendee deleted.', 'success');
         this.renderCrudAttendee();
     }
