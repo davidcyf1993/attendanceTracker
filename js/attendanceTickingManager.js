@@ -100,10 +100,7 @@ const AttendanceTickingManager = {
         // Optionally, clear Home tab's attendanceSection
         const homeAttSection = document.getElementById('attendanceSection');
         if (homeAttSection) homeAttSection.style.display = 'none';
-        // Initialize AddEventManager with current workbook, eventSheet, attMatrix
-        if (typeof AddEventManager !== 'undefined') {
-            AddEventManager.init();
-        }
+
         // Switch to Tick Attendance tab automatically
         if (typeof bootstrap !== 'undefined') {
             const tab = new bootstrap.Tab(document.querySelector('#tick-tab'));
@@ -163,18 +160,7 @@ const AttendanceTickingManager = {
         let selectedEventId = localStorage.getItem('tickAttendanceSelectedEventId') || null;
         const section = document.getElementById(sectionElementId);
         section.style.display = '';
-        
-        // Check if selected event exists in current event sheet
-        if (selectedEventId) {
-            const eventExists = this.eventSheet.some(ev => String(ev['ID']) === String(selectedEventId));
-            if (!eventExists) {
-                // Event no longer exists, clear localStorage and show event selection
-                localStorage.removeItem('tickAttendanceSelectedEventId');
-                selectedEventId = null;
-            }
-        }
-        
-        if (!selectedEventId) {
+        if (!selectedEventId) { // 
             // Stage 1: Select or create event
             let sortedEvents = this.getSortedEvents();
             let eventOptions = sortedEvents.map(ev => `<option value="${ev['ID']}">${ev['Event Name']} (${ev['ID']})</option>`).join('');
@@ -214,78 +200,54 @@ const AttendanceTickingManager = {
     },
 
     renderCreateEventForm(sectionElementId) {
-        // Simple create event form (reuse AddEventManager if available)
         const container = document.getElementById('createEventFormContainer');
         if (!container) return;
-        // If AddEventManager exists, use its form rendering
-        if (typeof AddEventManager !== 'undefined') {
-            // Render AddEventManager form and hook into its addNewEvent
-            AddEventManager.renderAddEventForm();
-            // After event is added, refresh event list and auto-select new event
-            const origAddNewEvent = AddEventManager.addNewEvent.bind(AddEventManager);
-            AddEventManager.addNewEvent = () => {
-                origAddNewEvent();
-                // Find the latest event (by max ID)
-                let events = DataHelper.getEvents();
-                let maxId = events.reduce((max, ev) => {
-                    let num = parseInt((ev.ID||'').replace('E',''));
-                    return (!isNaN(num) && num > max) ? num : max;
-                }, 0);
-                let newId = 'E' + String(maxId).padStart(3, '0');
-                localStorage.setItem('tickAttendanceSelectedEventId', newId);
-                // Refresh UI to stage 2
-                AttendanceTickingManager.showAttendanceTicking(sectionElementId);
-            };
-            // Move AddEventManager form into our container
-            const addEventSection = document.getElementById('addEventSection');
-            if (addEventSection) {
-                container.innerHTML = '';
-                container.appendChild(addEventSection.firstElementChild.cloneNode(true));
+        
+        // Simple inline form
+        container.innerHTML = `
+            <form id="inlineCreateEventForm">
+                <div class="mb-2"><input type="text" class="form-control" id="newEventName" placeholder="Event Name" required></div>
+                <div class="mb-2"><input type="text" class="form-control" id="newEventType" placeholder="Event Type" required></div>
+                <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventFrom" required></div>
+                <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventTo" required></div>
+                <button type="submit" class="btn btn-primary">Create Event</button>
+            </form>
+        `;
+        document.getElementById('inlineCreateEventForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('newEventName').value.trim();
+            const type = document.getElementById('newEventType').value.trim();
+            const from = document.getElementById('newEventFrom').value;
+            const to = document.getElementById('newEventTo').value;
+            if (!name || !type || !from || !to) {
+                showNotification('Please fill in all event fields.', 'danger');
+                return;
             }
-        } else {
-            // Fallback: simple inline form
-            container.innerHTML = `
-                <form id="inlineCreateEventForm">
-                    <div class="mb-2"><input type="text" class="form-control" id="newEventName" placeholder="Event Name" required></div>
-                    <div class="mb-2"><input type="text" class="form-control" id="newEventType" placeholder="Event Type" required></div>
-                    <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventFrom" required></div>
-                    <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventTo" required></div>
-                    <button type="submit" class="btn btn-primary">Create Event</button>
-                </form>
-            `;
-            document.getElementById('inlineCreateEventForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                // Add event logic (similar to AddEventManager)
-                const name = document.getElementById('newEventName').value.trim();
-                const type = document.getElementById('newEventType').value.trim();
-                const from = document.getElementById('newEventFrom').value;
-                const to = document.getElementById('newEventTo').value;
-                if (!name || !type || !from || !to) {
-                    showNotification('Please fill in all event fields.', 'danger');
-                    return;
-                }
-                // Generate new event ID using DataHelper.getNewId
-                const eventIds = DataHelper.getEvents().map(ev => ev.ID);
-                const newId = DataHelper.getNewId(eventIds);
-                const newEvent = { ID: newId, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to };
-                // Update event sheet
-                DataHelper.addEvent(newEvent);
-                // Add new event column to attendance if not present
-                let attMatrix = DataHelper.getAttendanceMatrix();
-                let header = attMatrix[0] || ["Attendee ID"];
-                if (!header.includes(newId)) {
-                    header.push(newId);
-                    for (let i = 1; i < attMatrix.length; ++i) {
-                        attMatrix[i].push("");
-                    }
-                }
-                // Update workbook attendance
-                DataHelper.setAttendanceMatrix(attMatrix);
-                showNotification('Event added successfully!', 'success');
-                localStorage.setItem('tickAttendanceSelectedEventId', newId);
-                AttendanceTickingManager.showAttendanceTicking(sectionElementId);
+            let events = DataHelper.getEvents();
+            let maxId = 0;
+            events.forEach(ev => {
+                const num = parseInt((ev.ID||'').replace('E',''));
+                if (!isNaN(num) && num > maxId) maxId = num;
             });
-        }
+            const newId = 'E' + String(maxId + 1).padStart(3, '0');
+            const newEvent = { ID: newId, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to };
+            // Update event sheet
+            DataHelper.addEvent(newEvent);
+            // Add new event column to attendance if not present
+            let attMatrix = DataHelper.getAttendanceMatrix();
+            let header = attMatrix[0] || ["Attendee ID"];
+            if (!header.includes(newId)) {
+                header.push(newId);
+                for (let i = 1; i < attMatrix.length; ++i) {
+                    attMatrix[i].push("");
+                }
+            }
+            // Update workbook attendance
+            DataHelper.setAttendanceMatrix(attMatrix);
+            showNotification('Event added successfully!', 'success');
+            localStorage.setItem('tickAttendanceSelectedEventId', newId);
+            AttendanceTickingManager.showAttendanceTicking(sectionElementId);
+        });
     },
 
     renderTicking(eventId) {
