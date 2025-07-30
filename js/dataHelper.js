@@ -218,9 +218,27 @@ const DataHelper = {
         return XLSX.read(wbout, { type: 'base64' });
     },
 
-    //add a method to save the workbook to a file
-    downloadWorkbook(filename = 'attendance_updated.xlsx') {
-        if (!this.workbook) return;
+    /**
+     * Download the current workbook to a file
+     * @param {string} filename - The filename to save the workbook as. If not provided, a timestamp will be used.
+     */
+    downloadWorkbook(filename = null) {
+        if (!this.workbook) {
+            console.error('No workbook to download');
+            return;
+        }
+        
+        // Generate timestamp for filename: yyyymmddhhmm if no filename provided
+        if (!filename) {
+            const now = new Date();
+            const timestamp = now.getFullYear().toString() +
+                             String(now.getMonth() + 1).padStart(2, '0') +
+                             String(now.getDate()).padStart(2, '0') +
+                             String(now.getHours()).padStart(2, '0') +
+                             String(now.getMinutes()).padStart(2, '0');
+            filename = `attendance_${timestamp}.xlsx`;
+        }
+        
         const wbout = XLSX.write(this.workbook, { bookType: 'xlsx', type: 'array' });
         const blob = new Blob([wbout], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);

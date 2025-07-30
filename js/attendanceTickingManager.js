@@ -390,17 +390,8 @@ const AttendanceTickingManager = {
         // Write back to workbook
         DataHelper.updateAttendanceMatrix(this.attMatrix);
         
-        // Download updated file
-        const wbout = XLSX.write(DataHelper.getWorkbook(), {bookType:'xlsx', type:'array'});
-        const blob = new Blob([wbout], {type: "application/octet-stream"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'attendance_updated.xlsx';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // Download updated file using DataHelper
+        DataHelper.downloadWorkbook();
         
         // Show success message
         showNotification('Attendance saved and file downloaded!', 'success');
