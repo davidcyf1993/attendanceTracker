@@ -298,20 +298,21 @@ const AttendanceTickingManager = {
                             <table id="attendanceTable" class="table table-hover">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Full Name</th>
-                                        <th>Nick Name</th>
-                                        <th>Present</th>
+                                        <th class="name">Name</th>
+                                        <th class="checkAttendance">Present</th>
                                     </tr>
                                 </thead>
                                 <tbody id="attendanceTableBody">
         `;
         this.attendeeSheet.forEach(row => {
             let checked = (attMap[row['ID']] && attMap[row['ID']][eventColIdx] === 'Yes') ? 'checked' : '';
+            const fullName = row['Full Name'] || '';
+            const nickName = row['Nick Name'] || '';
+            const displayName = nickName ? `${fullName}, ${nickName}` : fullName;
             table += `
                 <tr>
-                    <td class="text-break">${row['Full Name']||''}</td>
-                    <td class="text-break">${row['Nick Name']||''}</td>
-                    <td class="text-center">
+                    <td class="text-break name">${displayName}</td>
+                    <td class="text-center checkAttendance">
                         <div class="form-check d-flex justify-content-center">
                             <input class="form-check-input" type="checkbox" name="present" value="${row['ID']}" ${checked}>
                         </div>
@@ -331,8 +332,11 @@ const AttendanceTickingManager = {
         // Search/filter logic
         const attendeeRows = this.attendeeSheet.map(row => {
             let checked = (attMap[row['ID']] && attMap[row['ID']][eventColIdx] === 'Yes') ? 'checked' : '';
+            const fullName = row['Full Name'] || '';
+            const nickName = row['Nick Name'] || '';
+            const displayName = nickName ? `${fullName}, ${nickName}` : fullName;
             return {
-                html: `<tr><td class=\"text-break\">${row['Full Name']||''}</td><td class=\"text-break\">${row['Nick Name']||''}</td><td class=\"text-center\"><div class=\"form-check d-flex justify-content-center\"><input class=\"form-check-input\" type=\"checkbox\" name=\"present\" value=\"${row['ID']}\" ${checked}></div></td></tr>`,
+                html: `<tr><td class=\"text-break name\">${displayName}</td><td class=\"text-center checkAttendance\"><div class=\"form-check d-flex justify-content-center\"><input class=\"form-check-input\" type=\"checkbox\" name=\"present\" value=\"${row['ID']}\" ${checked}></div></td></tr>`,
                 fullName: (row['Full Name']||'').toString().toLowerCase(),
                 nickName: (row['Nick Name']||'').toString().toLowerCase(),
             };
@@ -386,17 +390,8 @@ const AttendanceTickingManager = {
         // Write back to workbook
         DataHelper.updateAttendanceMatrix(this.attMatrix);
         
-        // Download updated file
-        const wbout = XLSX.write(DataHelper.getWorkbook(), {bookType:'xlsx', type:'array'});
-        const blob = new Blob([wbout], {type: "application/octet-stream"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'attendance_updated.xlsx';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // Download updated file using DataHelper
+        DataHelper.downloadWorkbook();
         
         // Show success message
         showNotification('Attendance saved and file downloaded!', 'success');
