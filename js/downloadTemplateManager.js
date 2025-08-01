@@ -45,7 +45,7 @@ const DownloadTemplateManager = {
         XLSX.utils.book_append_sheet(wb, ws1, "attendee");
 
         // Use meaningful names for events
-        const eventTypes = ["Seminar", "Workshop", "Meeting", "Conference", "Webinar"];
+        const eventTypes = ["兒童聚會", "祟拜", "佈道會", "外出旅行", "Awana"];
         const eventData = [["ID", "Event Name", "Event Type", "Datetime From", "Datetime To"]];
         for (let i = 1; i <= 100; ++i) {
             const eventType = eventTypes[(i - 1) % eventTypes.length];
@@ -133,6 +133,6 @@ const DownloadTemplateManager = {
         URL.revokeObjectURL(url);
         
         // Show success message
-        showNotification('Template downloaded successfully!', 'success');
+        showNotification('匯入樣本已成功下載!', 'success');
     }
 };

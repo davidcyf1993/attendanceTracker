@@ -186,6 +186,11 @@ input[type="checkbox"] {
     accent-color: #667eea;
 }
 
+/* Checkbox column width */
+#attendanceTable .checkAttendance {
+    width: 120px;    
+}
+
 /* Status messages */
 #fileStatus {
     margin-bottom: 0.5em;
@@ -204,6 +209,10 @@ input[type="checkbox"] {
     color: #388e3c;
     background-color: #e8f5e8;
     border: 1px solid #c8e6c9;
+}
+
+i.bi {
+    padding-right: 10px;
 }
 
 /* Form sections */

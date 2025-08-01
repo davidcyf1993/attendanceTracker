@@ -1,12 +1,10 @@
 // crudAttendeeManager.js - Handles CRUD for Attendees
 
 const CrudAttendeeManager = {
-    workbook: null,
     attendeeSheet: [],
 
-    init(workbook) {
-        this.workbook = workbook;
-        this.attendeeSheet = XLSX.utils.sheet_to_json(workbook.Sheets['attendee']);
+    init() {
+        this.attendeeSheet = DataHelper.getAttendees();
         this.renderCrudAttendee();
     },
 
@@ -15,18 +13,18 @@ const CrudAttendeeManager = {
         if (!section) return;
         let sortKey = this._sortKey || 'ID';
         let sortDir = this._sortDir || 1;
-        let filter = (this._searchText || '').toLowerCase();
-        let filteredSheet = [...this.attendeeSheet];
+        let filter = String(this._searchText || '').toLowerCase();
+        let filteredSheet = [...DataHelper.getAttendees()];
         if (filter) {
             filteredSheet = filteredSheet.filter(a =>
-                (a['Full Name'] || '').toLowerCase().includes(filter) ||
-                (a['Nick Name'] || '').toLowerCase().includes(filter) ||
-                (a['ID'] || '').toLowerCase().includes(filter)
+                (a['Full Name'] || '').toString().toLowerCase().includes(filter) ||
+                (a['Nick Name'] || '').toString().toLowerCase().includes(filter) ||
+                (a['ID'] || '').toString().toLowerCase().includes(filter)
             );
         }
         let sortedSheet = filteredSheet.sort((a, b) => {
-            let av = (a[sortKey] || '').toLowerCase();
-            let bv = (b[sortKey] || '').toLowerCase();
+            let av = (a[sortKey] || '').toString().toLowerCase();
+            let bv = (b[sortKey] || '').toString().toLowerCase();
             if (av < bv) return -1 * sortDir;
             if (av > bv) return 1 * sortDir;
             return 0;
@@ -43,13 +41,13 @@ const CrudAttendeeManager = {
             return label + greyUpArrow + greyDownArrow;
         }
         let table = `<div class="mb-3 text-end">
-            <button class="btn btn-success" id="addAttendeeBtn"><i class="bi bi-plus-circle"></i> Add Attendee</button>
+            <button class="btn btn-success" id="addAttendeeBtn"><i class="bi bi-plus-circle"></i>新增參加者</button>
         </div>`;
         table += `<div class="table-responsive"><table class="table table-hover"><thead><tr>
-            <th class="sortable" data-key="ID">${thLabel('ID', 'ID')}</th>
-            <th class="sortable" data-key="Full Name">${thLabel('Full Name', 'Full Name')}</th>
-            <th class="sortable" data-key="Nick Name">${thLabel('Nick Name', 'Nick Name')}</th>
-            <th>Actions</th></tr></thead><tbody id="crudAttendeeTableBody">`;
+            <th class="sortable" data-key="ID">${thLabel('編號', 'ID')}</th>
+            <th class="sortable" data-key="Full Name">${thLabel('姓名', 'Full Name')}</th>
+            <th class="sortable" data-key="Nick Name">${thLabel('別名', 'Nick Name')}</th>
+            <th>動作</th></tr></thead><tbody id="crudAttendeeTableBody">`;
         sortedSheet.forEach(att => {
             table += `<tr>
                 <td>${att['ID']}</td>
@@ -98,12 +96,20 @@ const CrudAttendeeManager = {
 
     showAttendeeForm(id) {
         const section = document.getElementById('crudAttendeeSection');
-        let att = id ? this.attendeeSheet.find(a => a['ID'] === id) : { 'ID': '', 'Full Name': '', 'Nick Name': '' };
+        let att = id ? DataHelper.getAttendees().find(a => String(a['ID']) === String(id)) : { 'ID': '', 'Full Name': '', 'Nick Name': '' };
         let isEdit = !!id;
+        
+        // Generate new ID if creating new attendee
+        let newId = '';
+        if (!isEdit) {
+            const attendeeIds = DataHelper.getAttendees().map(a => a['ID']);
+            newId = DataHelper.getNewId(attendeeIds);
+        }
+        
         section.innerHTML = `<form id="attendeeForm">
             <div class="mb-3">
                 <label class="form-label">ID</label>
-                <input type="text" class="form-control" id="attendeeId" value="${att['ID'] || ''}" ${isEdit ? 'readonly' : ''} required />
+                <input type="text" class="form-control" id="attendeeId" value="${att['ID'] || newId}" ${isEdit ? 'readonly' : ''} required />
             </div>
             <div class="mb-3">
                 <label class="form-label">Full Name</label>
@@ -113,8 +119,8 @@ const CrudAttendeeManager = {
                 <label class="form-label">Nick Name</label>
                 <input type="text" class="form-control" id="attendeeNickName" value="${att['Nick Name'] || ''}" />
             </div>
-            <button type="submit" class="btn btn-primary">${isEdit ? 'Update' : 'Add'} Attendee</button>
-            <button type="button" class="btn btn-secondary ms-2" id="cancelAttendeeBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary">${isEdit ? '更改' : '新增'}參加者</button>
+            <button type="button" class="btn btn-secondary ms-2" id="cancelAttendeeBtn">取消</button>
         </form>`;
         document.getElementById('attendeeForm').onsubmit = (e) => {
             e.preventDefault();
@@ -128,33 +134,28 @@ const CrudAttendeeManager = {
         const fullName = document.getElementById('attendeeFullName').value.trim();
         const nickName = document.getElementById('attendeeNickName').value.trim();
         if (!id || !fullName) {
-            showNotification('ID and Full Name are required.', 'danger');
+            showNotification('必需填寫編號及姓名', 'danger');
             return;
         }
         if (isEdit) {
-            let att = this.attendeeSheet.find(a => a['ID'] === id);
-            att['Full Name'] = fullName;
-            att['Nick Name'] = nickName;
+            DataHelper.updateAttendee(id, { 'Full Name': fullName, 'Nick Name': nickName });
         } else {
-            if (this.attendeeSheet.some(a => a['ID'] === id)) {
-                showNotification('ID already exists.', 'danger');
+            if (DataHelper.getAttendees().some(a => String(a['ID']) === String(id))) {
+                showNotification('編號重復', 'danger');
                 return;
             }
-            this.attendeeSheet.push({ 'ID': id, 'Full Name': fullName, 'Nick Name': nickName });
+            DataHelper.addAttendee({ 'ID': id, 'Full Name': fullName, 'Nick Name': nickName });
         }
-        // Update workbook
-        const ws = XLSX.utils.json_to_sheet(this.attendeeSheet, { header: ['ID', 'Full Name', 'Nick Name'] });
-        this.workbook.Sheets['attendee'] = ws;
-        showNotification('Attendee saved.', 'success');
+        showNotification('參加者資料已儲存', 'success');
         this.renderCrudAttendee();
     },
 
     deleteAttendee(id) {
-        if (!confirm('Delete this attendee?')) return;
-        this.attendeeSheet = this.attendeeSheet.filter(a => a['ID'] !== id);
-        const ws = XLSX.utils.json_to_sheet(this.attendeeSheet, { header: ['ID', 'Full Name', 'Nick Name'] });
-        this.workbook.Sheets['attendee'] = ws;
-        showNotification('Attendee deleted.', 'success');
+        var currentAttendee = DataHelper.getAttendees().filter(a => String(a['ID']) === String(id))[0];
+        if (!confirm('刪除參加者資料?\n編號: ' + currentAttendee['ID'] + '\n事件名稱: ' + currentAttendee['Full Name'])) return;
+
+        DataHelper.deleteAttendee(id);
+        showNotification('參加者資料已刪除', 'success');
         this.renderCrudAttendee();
     }
 };

@@ -1,12 +1,10 @@
 // crudEventManager.js - Handles CRUD for Events
 
 const CrudEventManager = {
-    workbook: null,
     eventSheet: [],
 
-    init(workbook) {
-        this.workbook = workbook;
-        this.eventSheet = XLSX.utils.sheet_to_json(workbook.Sheets['event']);
+    init() {
+        this.eventSheet = DataHelper.getEvents();
         this.renderCrudEvent();
     },
 
@@ -15,7 +13,7 @@ const CrudEventManager = {
         if (!section) return;
         // Remove searchBox from JS, assume it is in HTML
         // Calculate attendance % for each event
-        let attMatrix = XLSX.utils.sheet_to_json(this.workbook.Sheets['attendance'], {header:1});
+        let attMatrix = DataHelper.getAttendanceMatrix();
         let header = attMatrix[0] || [];
         let rows = attMatrix.slice(1);
         let eventIdToPercent = {};
@@ -24,9 +22,9 @@ const CrudEventManager = {
             let present = 0, total = 0;
             rows.forEach(row => {
                 let val = row[i];
-                if (val && (val.toString().trim().toLowerCase() === 'yes' || val.toString().trim().toLowerCase() === 'no')) {
+                if (val && (val.toString().trim().toLowerCase() === '是' || val.toString().trim().toLowerCase() === '否')) {
                     total++;
-                    if (val.toString().trim().toLowerCase() === 'yes') present++;
+                    if (val.toString().trim().toLowerCase() === '是') present++;
                 }
             });
             eventIdToPercent[eventId] = total ? Math.round((present / total) * 100) : null;
@@ -35,13 +33,13 @@ const CrudEventManager = {
         let sortKey = this._sortKey || 'ID';
         let sortDir = this._sortDir || 1;
         // Use filteredSheet if search is active
-        let filter = (this._searchText || '').toLowerCase();
-        let filteredSheet = [...this.eventSheet];
+        let filter = String(this._searchText || '').toLowerCase();
+        let filteredSheet = [...DataHelper.getEvents()];
         if (filter) {
             filteredSheet = filteredSheet.filter(e =>
-                (e['Event Name'] || '').toLowerCase().includes(filter) ||
-                (e['Event Type'] || '').toLowerCase().includes(filter) ||
-                (e['ID'] || '').toLowerCase().includes(filter)
+                (e['Event Name'] || '').toString().toLowerCase().includes(filter) ||
+                (e['Event Type'] || '').toString().toLowerCase().includes(filter) ||
+                (e['ID'] || '').toString().toLowerCase().includes(filter)
             );
         }
         let sortedSheet = filteredSheet.sort((a, b) => {
@@ -52,8 +50,8 @@ const CrudEventManager = {
                 av = av === null ? -1 : av;
                 bv = bv === null ? -1 : bv;
             } else {
-                av = (a[sortKey] || '').toLowerCase();
-                bv = (b[sortKey] || '').toLowerCase();
+                av = (a[sortKey] || '').toString().toLowerCase();
+                bv = (b[sortKey] || '').toString().toLowerCase();
             }
             if (av < bv) return -1 * sortDir;
             if (av > bv) return 1 * sortDir;
@@ -71,17 +69,17 @@ const CrudEventManager = {
             return label + greyUpArrow + greyDownArrow;
         }
         let table = `<div class="mb-3 text-end">
-            <button class="btn btn-success" id="addEventBtn"><i class="bi bi-plus-circle"></i> Add Event</button>
+            <button class="btn btn-success" id="addEventBtn"><i class="bi bi-plus-circle"></i>建立新事件</button>
         </div>`;
         // searchBox is now in HTML, do not add here
         table += `<div class="table-responsive"><table class="table table-hover"><thead><tr>
-            <th class="sortable" data-key="ID">${thLabel('ID', 'ID')}</th>
-            <th class="sortable" data-key="Event Name">${thLabel('Event Name', 'Event Name')}</th>
-            <th class="sortable" data-key="Event Type">${thLabel('Event Type', 'Event Type')}</th>
-            <th class="sortable" data-key="Datetime From">${thLabel('Datetime From', 'Datetime From')}</th>
-            <th class="sortable" data-key="Datetime To">${thLabel('Datetime To', 'Datetime To')}</th>
-            <th class="sortable" data-key="Attendance %">${thLabel('Attendance %', 'Attendance %')}</th>
-            <th>Actions</th></tr></thead><tbody id="crudEventTableBody">`;
+            <th class="sortable" data-key="ID">${thLabel('編號', 'ID')}</th>
+            <th class="sortable" data-key="Event Name">${thLabel('事件名稱', 'Event Name')}</th>
+            <th class="sortable" data-key="Event Type">${thLabel('事件類別', 'Event Type')}</th>
+            <th class="sortable" data-key="Datetime From">${thLabel('事件開始時間', 'Datetime From')}</th>
+            <th class="sortable" data-key="Datetime To">${thLabel('事件結束時間', 'Datetime To')}</th>
+            <th class="sortable" data-key="Attendance %">${thLabel('出席率 %', 'Attendance %')}</th>
+            <th>動作</th></tr></thead><tbody id="crudEventTableBody">`;
         sortedSheet.forEach(ev => {
             let percent = eventIdToPercent[ev['ID']];
             table += `<tr>
@@ -134,12 +132,23 @@ const CrudEventManager = {
 
     showEventForm(id) {
         const section = document.getElementById('crudEventSection');
-        let ev = id ? this.eventSheet.find(e => e['ID'] === id) : { 'ID': '', 'Event Name': '', 'Event Type': '', 'Datetime From': '', 'Datetime To': '' };
+        let ev = id ? DataHelper.getEvents().find(e => String(e['ID']) === String(id)) : { 'ID': '', 'Event Name': '', 'Event Type': '', 'Datetime From': '', 'Datetime To': '' };
         let isEdit = !!id;
+        
+        // Generate new ID if creating new event
+        let newId = '';
+        if (!isEdit) {
+            const eventIds = DataHelper.getEvents().map(e => e['ID']);
+            newId = DataHelper.getNewId(eventIds);
+        }
+        
+        // Get existing event types for typeahead
+        const existingEventTypes = [...new Set(DataHelper.getEvents().map(e => e['Event Type']).filter(type => type && type.trim()))];
+        
         section.innerHTML = `<form id="eventForm">
             <div class="mb-3">
                 <label class="form-label">ID</label>
-                <input type="text" class="form-control" id="eventId" value="${ev['ID'] || ''}" ${isEdit ? 'readonly' : ''} required />
+                <input type="text" class="form-control" id="eventId" value="${ev['ID'] || newId}" ${isEdit ? 'readonly' : ''} required />
             </div>
             <div class="mb-3">
                 <label class="form-label">Event Name</label>
@@ -147,7 +156,12 @@ const CrudEventManager = {
             </div>
             <div class="mb-3">
                 <label class="form-label">Event Type</label>
-                <input type="text" class="form-control" id="eventType" value="${ev['Event Type'] || ''}" required />
+                <div class="position-relative">
+                    <input type="text" class="form-control" id="eventType" value="${ev['Event Type'] || ''}" required list="eventTypeSuggestions" autocomplete="off" />
+                    <datalist id="eventTypeSuggestions">
+                        ${existingEventTypes.map(type => `<option value="${type}">`).join('')}
+                    </datalist>
+                </div>
             </div>
             <div class="mb-3">
                 <label class="form-label">Datetime From</label>
@@ -157,14 +171,17 @@ const CrudEventManager = {
                 <label class="form-label">Datetime To</label>
                 <input type="datetime-local" class="form-control" id="eventTo" value="${ev['Datetime To'] || ''}" required />
             </div>
-            <button type="submit" class="btn btn-primary">${isEdit ? 'Update' : 'Add'} Event</button>
-            <button type="button" class="btn btn-secondary ms-2" id="cancelEventBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary">${isEdit ? '更改' : '建立'}事件</button>
+            <button type="button" class="btn btn-secondary ms-2" id="cancelEventBtn">取消</button>
         </form>`;
         document.getElementById('eventForm').onsubmit = (e) => {
             e.preventDefault();
             this.saveEvent(isEdit);
         };
         document.getElementById('cancelEventBtn').onclick = () => this.renderCrudEvent();
+        
+        // Initialize typeahead functionality
+        this.initEventTypeTypeahead();
     },
 
     saveEvent(isEdit) {
@@ -174,35 +191,135 @@ const CrudEventManager = {
         const from = document.getElementById('eventFrom').value;
         const to = document.getElementById('eventTo').value;
         if (!id || !name || !type || !from || !to) {
-            showNotification('All fields are required.', 'danger');
+            showNotification('必需填寫全部欄位', 'danger');
             return;
         }
         if (isEdit) {
-            let ev = this.eventSheet.find(e => e['ID'] === id);
-            ev['Event Name'] = name;
-            ev['Event Type'] = type;
-            ev['Datetime From'] = from;
-            ev['Datetime To'] = to;
+            DataHelper.updateEvent(id, { 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
         } else {
-            if (this.eventSheet.some(e => e['ID'] === id)) {
-                showNotification('ID already exists.', 'danger');
+            if (DataHelper.getEvents().some(e => String(e['ID']) === String(id))) {
+                showNotification('編號重復', 'danger');
                 return;
             }
-            this.eventSheet.push({ 'ID': id, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
+            DataHelper.addEvent({ 'ID': id, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
         }
-        // Update workbook
-        const ws = XLSX.utils.json_to_sheet(this.eventSheet, { header: ['ID', 'Event Name', 'Event Type', 'Datetime From', 'Datetime To'] });
-        this.workbook.Sheets['event'] = ws;
-        showNotification('Event saved.', 'success');
+        showNotification('事件已儲存', 'success');
         this.renderCrudEvent();
     },
 
     deleteEvent(id) {
-        if (!confirm('Delete this event?')) return;
-        this.eventSheet = this.eventSheet.filter(e => e['ID'] !== id);
-        const ws = XLSX.utils.json_to_sheet(this.eventSheet, { header: ['ID', 'Event Name', 'Event Type', 'Datetime From', 'Datetime To'] });
-        this.workbook.Sheets['event'] = ws;
-        showNotification('Event deleted.', 'success');
+        var currentEvent = DataHelper.getEvents().filter(e => String(e['ID']) === String(id))[0];
+        if (!confirm('刪除事件?\n編號: ' + currentEvent['ID'] + '\n事件名稱: ' + currentEvent['Event Name'])) return;
+
+        DataHelper.deleteEvent(id);
+        showNotification('事件已刪除', 'success');
         this.renderCrudEvent();
+    },
+
+    initEventTypeTypeahead() {
+        const input = document.getElementById('eventType');
+        if (!input) return;
+
+        // Get existing event types
+        const existingEventTypes = [...new Set(DataHelper.getEvents().map(e => e['Event Type']).filter(type => type && type.trim()))];
+        
+        // Create dropdown container
+        const dropdownContainer = document.createElement('div');
+        dropdownContainer.className = 'position-absolute w-100 bg-white border rounded shadow-sm';
+        dropdownContainer.style.cssText = 'top: 100%; left: 0; z-index: 1000; max-height: 200px; overflow-y: auto; display: none;';
+        dropdownContainer.id = 'eventTypeDropdown';
+        
+        // Insert dropdown after input
+        input.parentNode.appendChild(dropdownContainer);
+        
+        // Function to show suggestions
+        const showSuggestions = (query) => {
+            let filteredTypes;
+            
+            if (!query.trim()) {
+                // Show all options when input is empty
+                filteredTypes = existingEventTypes;
+            } else {
+                // Filter based on query
+                filteredTypes = existingEventTypes.filter(type => 
+                    type.toLowerCase().includes(query.toLowerCase())
+                );
+            }
+            
+            if (filteredTypes.length === 0) {
+                dropdownContainer.style.display = 'none';
+                return;
+            }
+            
+            dropdownContainer.innerHTML = filteredTypes.map(type => 
+                `<div class="dropdown-item p-2 cursor-pointer" data-value="${type}">${type}</div>`
+            ).join('');
+            
+            dropdownContainer.style.display = 'block';
+            
+            // Add hover effects
+            dropdownContainer.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('mouseenter', () => {
+                    item.style.backgroundColor = '#f8f9fa';
+                });
+                item.addEventListener('mouseleave', () => {
+                    item.style.backgroundColor = '';
+                });
+                item.addEventListener('click', () => {
+                    input.value = item.dataset.value;
+                    dropdownContainer.style.display = 'none';
+                    input.focus();
+                });
+            });
+        };
+        
+        // Event listeners
+        input.addEventListener('input', (e) => {
+            showSuggestions(e.target.value);
+        });
+        
+        input.addEventListener('focus', () => {
+            showSuggestions(input.value);
+        });
+        
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !dropdownContainer.contains(e.target)) {
+                dropdownContainer.style.display = 'none';
+            }
+        });
+        
+        // Keyboard navigation
+        input.addEventListener('keydown', (e) => {
+            const visibleItems = dropdownContainer.querySelectorAll('.dropdown-item');
+            const currentIndex = Array.from(visibleItems).findIndex(item => 
+                item.style.backgroundColor === 'rgb(248, 249, 250)'
+            );
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (visibleItems.length > 0) {
+                    const nextIndex = currentIndex < visibleItems.length - 1 ? currentIndex + 1 : 0;
+                    visibleItems.forEach(item => item.style.backgroundColor = '');
+                    visibleItems[nextIndex].style.backgroundColor = '#f8f9fa';
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (visibleItems.length > 0) {
+                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : visibleItems.length - 1;
+                    visibleItems.forEach(item => item.style.backgroundColor = '');
+                    visibleItems[prevIndex].style.backgroundColor = '#f8f9fa';
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const selectedItem = dropdownContainer.querySelector('.dropdown-item[style*="background-color: rgb(248, 249, 250)"]');
+                if (selectedItem) {
+                    input.value = selectedItem.dataset.value;
+                    dropdownContainer.style.display = 'none';
+                }
+            } else if (e.key === 'Escape') {
+                dropdownContainer.style.display = 'none';
+            }
+        });
     }
 };

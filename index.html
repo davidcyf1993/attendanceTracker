@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hans">
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Tracker</title>
+    <title>點名系統</title>
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="lib/bootstrap-5.3.7-dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -14,27 +14,27 @@
         <ul class="nav nav-tabs flex-column flex-sm-row w-100 justify-content-between" id="attendanceTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">
-                    <i class="bi bi-house"></i> <span class="d-none d-sm-inline">Home</span>
+                    <i class="bi bi-house"></i> <span class="d-none d-sm-inline">首頁</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tick-tab" data-bs-toggle="tab" data-bs-target="#tick" type="button" role="tab" aria-controls="tick" aria-selected="false" tabindex="-1" disabled>
-                    <i class="bi bi-check-square"></i> <span class="d-none d-sm-inline">Tick Attendance</span>
+                    <i class="bi bi-check-square"></i> <span class="d-none d-sm-inline">進行點名</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="calc-attendance-tab" data-bs-toggle="tab" data-bs-target="#calc-attendance" type="button" role="tab" aria-controls="calc-attendance" aria-selected="false" tabindex="-1" disabled>
-                    <i class="bi bi-bar-chart"></i> <span class="d-none d-sm-inline">Calculate Attendance</span>
+                    <i class="bi bi-bar-chart"></i> <span class="d-none d-sm-inline">計算出席率</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="crud-attendee-tab" data-bs-toggle="tab" data-bs-target="#crud-attendee" type="button" role="tab" aria-controls="crud-attendee" aria-selected="false" tabindex="-1" disabled>
-                    <i class="bi bi-person-lines-fill"></i> <span class="d-none d-sm-inline">Manage Attendees</span>
+                    <i class="bi bi-person-lines-fill"></i> <span class="d-none d-sm-inline">管理參加者</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="crud-event-tab" data-bs-toggle="tab" data-bs-target="#crud-event" type="button" role="tab" aria-controls="crud-event" aria-selected="false" tabindex="-1" disabled>
-                    <i class="bi bi-calendar-event"></i> <span class="d-none d-sm-inline">Manage Events</span>
+                    <i class="bi bi-calendar-event"></i> <span class="d-none d-sm-inline">管理事件</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation" >
@@ -49,21 +49,21 @@
         <!-- Home Tab -->
         <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
             <div class="text-center py-4">
-                <h2 class="mb-4">Welcome to Attendance Tracker</h2>
-                <p class="lead mb-4">Manage your attendance records with ease</p>
+                <h2 class="mb-4">歡迎來到點名系統</h2>
+                <p class="lead mb-4">管理點名記錄</p>
                 
                 <!-- Upload Excel Section -->
                 <div class="row mb-4">
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body text-center">
-                                <h4 class="mb-3">Upload Excel File</h4>
+                                <h4 class="mb-3">上傳試算表</h4>
                                 <div class="mb-3">
-                                    <label for="excelFile" class="form-label">Select your attendance Excel file:</label>
+                                    <label for="excelFile" class="form-label">選擇出席率試算表:</label>
                                     <input type="file" class="form-control" id="excelFile" accept=".xlsx,.xls" />
                                     <div id="fileStatus" class="mt-2"></div>
                                     <button id="uploadBtn" class="btn btn-success mt-3">
-                                        <i class="bi bi-upload"></i> Upload & Continue
+                                        <i class="bi bi-upload"></i>上載匯入試算表
                                     </button>
                                 </div>
                             </div>
@@ -76,13 +76,13 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body text-center">
-                                <h4 class="mb-3">Download Template</h4>
+                                <h4 class="mb-3">下載試算表樣本</h4>
                                 <div class="alert alert-info">
                                     <i class="bi bi-info-circle"></i>
-                                    <strong>Don't have an Excel file?</strong> Download our template to get started.
+                                    <strong>下載匯入試算表樣本，以供修改</strong>
                                 </div>
                                 <button id="downloadTemplateBtn" class="btn btn-primary btn-lg">
-                                    <i class="bi bi-download"></i> Download Template
+                                    <i class="bi bi-download"></i>下載試算表樣本
                                 </button>
                             </div>
                         </div>
@@ -99,7 +99,7 @@
         <!-- Tick Attendance Tab -->
         <div class="tab-pane fade" id="tick" role="tabpanel" aria-labelledby="tick-tab">
             <div class="py-4">
-                <h2 class="mb-4">Tick Attendance</h2>
+                <h2 class="mb-4">開始點名</h2>
                 <div id="attendanceSectionTick" style="display:none;">
                     <!-- Attendance UI will go here after file is loaded -->
                 </div>
@@ -109,7 +109,7 @@
         <!-- Calculate Attendance Tab -->
         <div class="tab-pane fade" id="calc-attendance" role="tabpanel" aria-labelledby="calc-attendance-tab">
             <div class="py-4">
-                <h2 class="mb-4">Calculate Attendance</h2>
+                <h2 class="mb-4">出席率計算</h2>
                 <div id="calcAttendanceSection">
                     <!-- Attendance calculation UI will go here -->
                 </div>
@@ -119,9 +119,9 @@
         <!-- Manage Attendees Tab -->
         <div class="tab-pane fade" id="crud-attendee" role="tabpanel" aria-labelledby="crud-attendee-tab">
             <div class="py-4">
-                <h2 class="mb-4">Manage Attendees</h2>
+                <h2 class="mb-4">管理參加者</h2>
                 <!-- Search box for attendees -->
-                <div class="mb-3"><input type="text" id="attendeeSearchBox" class="form-control" placeholder="Search by name or nickname..."></div>
+                <div class="mb-3"><input type="text" id="attendeeSearchBox" class="form-control" placeholder="尋找姓名 / 別名"></div>
                 <div id="crudAttendeeSection">
                     <!-- CRUD Attendee UI will go here -->
                 </div>
@@ -131,9 +131,9 @@
         <!-- Manage Events Tab -->
         <div class="tab-pane fade" id="crud-event" role="tabpanel" aria-labelledby="crud-event-tab">
             <div class="py-4">
-                <h2 class="mb-4">Manage Events</h2>
+                <h2 class="mb-4">管理事件</h2>
                 <!-- Search box for events -->
-                <div class="mb-3"><input type="text" id="eventSearchBox" class="form-control" placeholder="Search by event name, type, or ID..."></div>
+                <div class="mb-3"><input type="text" id="eventSearchBox" class="form-control" placeholder="尋找事件名稱 / 類別 / 編號"></div>
                 <div id="crudEventSection">
                     <!-- CRUD Event UI will go here -->
                 </div>
@@ -142,17 +142,19 @@
     </div>
 
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="lib/bootstrap-icons-1.13.1/font/bootstrap-icons.min.css">
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="lib/bootstrap-5.3.7-dist/js/bootstrap.bundle.min.js"></script>
     <!-- XLSX Library -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="lib/xlsx/xlsx.full.min.js"></script>
     <!-- Custom JS -->
+    <script src="js/dataHelper.js"></script>
     <script src="js/downloadTemplateManager.js"></script>
     <script src="js/attendanceTickingManager.js"></script>
     <script src="js/calcAttendanceManager.js"></script>
     <script src="js/crudAttendeeManager.js"></script>
     <script src="js/crudEventManager.js"></script>
+   
     <script src="js/main.js"></script>
 </body>
 </html>

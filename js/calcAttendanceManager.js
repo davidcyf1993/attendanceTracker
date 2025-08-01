@@ -1,7 +1,6 @@
 // calcAttendanceManager.js - Handles Calculate Attendance tab functionality
 
 const CalcAttendanceManager = {
-    workbook: null,
     attendeeSheet: [],
     eventSheet: [],
     attMatrix: [],
@@ -10,13 +9,12 @@ const CalcAttendanceManager = {
         // Nothing to do on load
     },
 
-    showCalcAttendance(workbook, sectionElementId) {
-        this.workbook = workbook;
-        this.attendeeSheet = XLSX.utils.sheet_to_json(workbook.Sheets['attendee']);
-        this.eventSheet = XLSX.utils.sheet_to_json(workbook.Sheets['event']);
-        this.attMatrix = XLSX.utils.sheet_to_json(workbook.Sheets['attendance'], {header:1});
+    showCalcAttendance(sectionElementId) {
+        this.attendeeSheet = DataHelper.getAttendees();
+        this.eventSheet = DataHelper.getEvents();
+        this.attMatrix = DataHelper.getAttendanceMatrix();
         if (!this.attendeeSheet.length || !this.eventSheet.length || !this.attMatrix.length) {
-            document.getElementById(sectionElementId).innerHTML = '<div class="alert alert-danger">Attendance data not loaded.</div>';
+            document.getElementById(sectionElementId).innerHTML = '<div class="alert alert-danger">沒有點名資料</div>';
             return;
         }
         // Calculate attendance summary for each attendee
@@ -47,25 +45,25 @@ const CalcAttendanceManager = {
         let filterControls = `
             <div class="row mb-3">
                 <div class="col-md-3 mb-2">
-                    <label class="form-label">Event Type</label>
+                    <label class="form-label">事件類別</label>
                     <select id="filterEventType" class="form-select">
-                        <option value="">All</option>
+                        <option value="">全部</option>
                         ${eventTypes.map(type => `<option value="${type}">${type}</option>`).join('')}
                     </select>
                 </div>
                 <div class="col-md-3 mb-2">
-                    <label class="form-label">Event Name</label>
-                    <input type="text" id="filterEventName" class="form-control" list="eventNameList" placeholder="Type or select event name..." autocomplete="off" />
+                    <label class="form-label">事件名稱</label>
+                    <input type="text" id="filterEventName" class="form-control" list="eventNameList" placeholder="選擇事件名稱 / 類別" autocomplete="off" />
                     <datalist id="eventNameList">
                         ${eventNames.map(name => `<option value="${name}"></option>`).join('')}
                     </datalist>
                 </div>
                 <div class="col-md-3 mb-2">
-                    <label class="form-label">Date From</label>
+                    <label class="form-label">開始日期</label>
                     <input type="date" id="filterDateFrom" class="form-control" />
                 </div>
                 <div class="col-md-3 mb-2">
-                    <label class="form-label">Date To</label>
+                    <label class="form-label">結束日期</label>
                     <input type="date" id="filterDateTo" class="form-control" />
                 </div>
             </div>
@@ -73,11 +71,11 @@ const CalcAttendanceManager = {
         // Add search box for filtering
         let searchBox = `
             <div class="mb-3">
-                <input type="text" id="calcAttendeeSearch" class="form-control" placeholder="Search by name or nickname...">
+                <input type="text" id="calcAttendeeSearch" class="form-control" placeholder="尋找姓名">
             </div>
         `;
         // Build table
-        let table = `<div class="card"><div class="card-header"><h5 class="mb-0">Attendance Summary</h5></div><div class="card-body"><div class="table-responsive">${filterControls}${searchBox}<table class="table table-hover"><thead class="table-light"><tr><th>Full Name</th><th>Nick Name</th><th>Events</th><th>Present</th><th>Attendance %</th></tr></thead><tbody id="calcAttendanceTableBody">`;
+        let table = `<div class="card"><div class="card-header"><h5 class="mb-0">出席率彙整</h5></div><div class="card-body"><div class="table-responsive">${filterControls}${searchBox}<table class="table table-hover"><thead class="table-light"><tr><th>姓名</th><th>別名</th><th>事件</th><th>Present</th><th>出席率 %</th></tr></thead><tbody id="calcAttendanceTableBody">`;
         summary.forEach(row => {
             table += `<tr><td>${row.name}</td><td>${row.nickname}</td><td>${row.total}</td><td>${row.present}</td><td>${row.percent}%</td></tr>`;
         });
@@ -118,7 +116,7 @@ const CalcAttendanceManager = {
                     for (let i = 1; i < header.length; ++i) {
                         if (filteredEventIds.includes(header[i])) {
                             total++;
-                            if (attRow[i] && attRow[i].toString().trim().toLowerCase() === 'yes') presentCount++;
+                            if (attRow[i] && attRow[i].toString().trim().toLowerCase() === '是') presentCount++;
                         }
                     }
                 }
@@ -134,7 +132,7 @@ const CalcAttendanceManager = {
             const tbody = document.getElementById('calcAttendanceTableBody');
             const searchVal = document.getElementById('calcAttendeeSearch').value.trim().toLowerCase();
             tbody.innerHTML = summary.filter(row =>
-                row.name.toLowerCase().includes(searchVal) || row.nickname.toLowerCase().includes(searchVal)
+                row.name.toString().toLowerCase().includes(searchVal) || row.nickname.toString().toLowerCase().includes(searchVal)
             ).map(row => `<tr><td>${row.name}</td><td>${row.nickname}</td><td>${row.total}</td><td>${row.present}</td><td>${row.percent}%</td></tr>`).join('');
         }
         // Attach filter events

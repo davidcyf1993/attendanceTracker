@@ -24,7 +24,7 @@ const AddEventManager = {
         addEventSection.innerHTML = `
             <form id="addEventForm">
                 <div class="mb-3">
-                    <label for="newEventName" class="form-label">Event Name:</label>
+                    <label for="newEventName" class="form-label">尋找事件名稱 / 類別 / 編號:</label>
                     <input type="text" class="form-control" id="newEventName" required />
                 </div>
                 <div class="mb-3">
@@ -43,7 +43,7 @@ const AddEventManager = {
                     <input type="datetime-local" class="form-control" id="newEventTo" required />
                 </div>
                 <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-calendar-plus"></i> Add Event
+                    <i class="bi bi-calendar-plus"></i>建立新事件
                 </button>
             </form>
         `;
@@ -59,11 +59,11 @@ const AddEventManager = {
         const from = document.getElementById('newEventFrom').value;
         const to = document.getElementById('newEventTo').value;
         if (!name || !type || !from || !to) {
-            showNotification('Please fill in all event fields.', 'danger');
+            showNotification('必需填寫全部欄位', 'danger');
             return;
         }
         if (!this.workbook) {
-            showNotification('No workbook loaded. Please upload an Excel file first.', 'danger');
+            showNotification('請匯入試算表', 'danger');
             return;
         }
         // Generate new event ID
@@ -88,7 +88,7 @@ const AddEventManager = {
         // Update workbook attendance
         const wsAtt = XLSX.utils.aoa_to_sheet(this.attMatrix);
         this.workbook.Sheets['attendance'] = wsAtt;
-        showNotification('Event added successfully!', 'success');
+        showNotification('成功建位新事件', 'success');
         this.renderAddEventForm();
         // Refresh event list in Tick Attendance tab if visible
         if (typeof AttendanceTickingManager !== 'undefined') {

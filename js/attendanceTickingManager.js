@@ -1,7 +1,6 @@
 // attendanceTickingManager.js - Handles file upload and attendance management
 
 const AttendanceTickingManager = {
-    workbook: null,
     attendeeSheet: [],
     eventSheet: [],
     attMatrix: [],
@@ -43,12 +42,89 @@ const AttendanceTickingManager = {
         }
     },
 
+    /**
+     * Enable all tabs and show the Tick Attendance UI after workbook is loaded (from upload or restore)
+     */
+    enableAppUIAfterWorkbookLoad() {
+        // Enable Tick Attendance tab
+        const tickTab = document.getElementById('tick-tab');
+        if (tickTab) {
+            tickTab.removeAttribute('disabled');
+            tickTab.tabIndex = 0;
+        }
+        // Enable Add Event tab (if present)
+        const addEventTab = document.getElementById('add-event-tab');
+        if (addEventTab) {
+            addEventTab.removeAttribute('disabled');
+            addEventTab.tabIndex = 0;
+        }
+        // Enable Calculate Attendance tab
+        const calcAttendanceTab = document.getElementById('calc-attendance-tab');
+        if (calcAttendanceTab) {
+            calcAttendanceTab.removeAttribute('disabled');
+            calcAttendanceTab.tabIndex = 0;
+            calcAttendanceTab.addEventListener('click', () => {
+                if (typeof CalcAttendanceManager !== 'undefined') {
+                    CalcAttendanceManager.showCalcAttendance('calcAttendanceSection');
+                }
+            });
+        }
+        // Enable Manage Attendees tab
+        const crudAttendeeTab = document.getElementById('crud-attendee-tab');
+        if (crudAttendeeTab) {
+            crudAttendeeTab.removeAttribute('disabled');
+            crudAttendeeTab.removeAttribute('aria-disabled');
+            crudAttendeeTab.tabIndex = 0;
+            crudAttendeeTab.classList.remove('disabled');
+            crudAttendeeTab.addEventListener('click', () => {
+                if (typeof CrudAttendeeManager !== 'undefined') {
+                    CrudAttendeeManager.init();
+                }
+            });
+        }
+        // Enable Manage Events tab
+        const crudEventTab = document.getElementById('crud-event-tab');
+        if (crudEventTab) {
+            crudEventTab.removeAttribute('disabled');
+            crudEventTab.removeAttribute('aria-disabled');
+            crudEventTab.tabIndex = 0;
+            crudEventTab.classList.remove('disabled');
+            crudEventTab.addEventListener('click', () => {
+                if (typeof CrudEventManager !== 'undefined') {
+                    CrudEventManager.init();
+                }
+            });
+        }
+        // Show ticking UI in Tick tab, not Home tab
+        this.showAttendanceTicking('attendanceSectionTick');
+        // Optionally, clear Home tab's attendanceSection
+        const homeAttSection = document.getElementById('attendanceSection');
+        if (homeAttSection) homeAttSection.style.display = 'none';
+
+        // Switch to Tick Attendance tab automatically
+        if (typeof bootstrap !== 'undefined') {
+            const tab = new bootstrap.Tab(document.querySelector('#tick-tab'));
+            tab.show();
+        }
+
+        // Show Save Attendance icon button here
+        const saveBtn = document.getElementById('saveAttendanceTabBtn');
+        if (saveBtn) {
+            saveBtn.classList.remove('d-none');
+            // Avoid multiple event listeners
+            saveBtn.onclick = function () {
+                const form = document.getElementById('attendanceForm');
+                if (form) form.requestSubmit();
+            };
+        }
+    },
+
     handleFileUpload(fileInputId, statusElementId, sectionElementId) {
         const fileInput = document.getElementById(fileInputId);
         const file = fileInput.files[0];
         
         if (!file) {
-            this.showFileStatus('Please select an Excel file.', 'error', statusElementId);
+            this.showFileStatus('選擇試算表', 'error', statusElementId);
             return;
         }
 
@@ -57,112 +133,47 @@ const AttendanceTickingManager = {
             // ...existing code to parse workbook...
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            // Enable Tick Attendance tab
-            const tickTab = document.getElementById('tick-tab');
-            if (tickTab) {
-                tickTab.removeAttribute('disabled');
-                tickTab.tabIndex = 0;
-            }
-            // Enable Add Event tab
-            const addEventTab = document.getElementById('add-event-tab');
-            if (addEventTab) {
-                addEventTab.removeAttribute('disabled');
-                addEventTab.tabIndex = 0;
-            }
-            // Enable Calculate Attendance tab
-            const calcAttendanceTab = document.getElementById('calc-attendance-tab');
-            if (calcAttendanceTab) {
-                calcAttendanceTab.removeAttribute('disabled');
-                calcAttendanceTab.tabIndex = 0;
-                // Show Calculate Attendance tab content when tab is clicked
-                calcAttendanceTab.addEventListener('click', () => {
-                    if (typeof CalcAttendanceManager !== 'undefined') {
-                        CalcAttendanceManager.showCalcAttendance(workbook, 'calcAttendanceSection');
-                    }
-                });
-            }
-            // Enable Manage Attendees tab
-            const crudAttendeeTab = document.getElementById('crud-attendee-tab');
-            if (crudAttendeeTab) {
-                crudAttendeeTab.removeAttribute('disabled');
-                crudAttendeeTab.removeAttribute('aria-disabled');
-                crudAttendeeTab.tabIndex = 0;
-                crudAttendeeTab.classList.remove('disabled');
-                crudAttendeeTab.addEventListener('click', () => {
-                    if (typeof CrudAttendeeManager !== 'undefined') {
-                        CrudAttendeeManager.init(workbook);
-                    }
-                });
-            }
-            // Enable Manage Events tab
-            const crudEventTab = document.getElementById('crud-event-tab');
-            if (crudEventTab) {
-                crudEventTab.removeAttribute('disabled');
-                crudEventTab.removeAttribute('aria-disabled');
-                crudEventTab.tabIndex = 0;
-                crudEventTab.classList.remove('disabled');
-                crudEventTab.addEventListener('click', () => {
-                    if (typeof CrudEventManager !== 'undefined') {
-                        CrudEventManager.init(workbook);
-                    }
-                });
-            }
-            // Show ticking UI in Tick tab, not Home tab
-            this.showAttendanceTicking(workbook, 'attendanceSectionTick');
-            // Optionally, clear Home tab's attendanceSection
-            const homeAttSection = document.getElementById('attendanceSection');
-            if (homeAttSection) homeAttSection.style.display = 'none';
-            // Initialize AddEventManager with current workbook, eventSheet, attMatrix
-            if (typeof AddEventManager !== 'undefined') {
-                const eventSheet = XLSX.utils.sheet_to_json(workbook.Sheets['event']);
-                const attMatrix = XLSX.utils.sheet_to_json(workbook.Sheets['attendance'], {header:1});
-                AddEventManager.init(workbook, eventSheet, attMatrix);
-            }
-            // Switch to Tick Attendance tab automatically
-            if (typeof bootstrap !== 'undefined') {
-                const tab = new bootstrap.Tab(document.querySelector('#tick-tab'));
-                tab.show();
-            }
+            DataHelper.init(workbook, true);
+            this.enableAppUIAfterWorkbookLoad();
         };
         reader.readAsArrayBuffer(file);
     },
 
     // Utility to get sorted events by start datetime desc
     getSortedEvents() {
-        return this.eventSheet.slice().sort((a, b) => {
+        return DataHelper.getEvents().slice().sort((a, b) => {
             const aTime = new Date(a['Datetime From'] || a['Datetime from'] || a['Start'] || 0).getTime();
             const bTime = new Date(b['Datetime From'] || b['Datetime from'] || b['Start'] || 0).getTime();
             return bTime - aTime;
         });
     },
 
-    showAttendanceTicking(workbook, sectionElementId) {
-        this.workbook = workbook;
-        this.attendeeSheet = XLSX.utils.sheet_to_json(workbook.Sheets['attendee']);
-        this.eventSheet = XLSX.utils.sheet_to_json(workbook.Sheets['event']);
+    showAttendanceTicking(sectionElementId) {
+        this.attendeeSheet = DataHelper.getAttendees();
+        this.eventSheet = DataHelper.getEvents();
         if (!this.attendeeSheet.length) {
-            document.getElementById(sectionElementId).innerHTML = '<div class="alert alert-warning">No attendees found in the attendee sheet.</div>';
+            document.getElementById(sectionElementId).innerHTML = '<div class="alert alert-warning">沒有參加者匯入</div>';
             return;
         }
-        this.attMatrix = XLSX.utils.sheet_to_json(workbook.Sheets['attendance'], {header:1});
+        this.attMatrix = DataHelper.getAttendanceMatrix();
         // Two-stage UI: Stage 1 = select/create event, Stage 2 = tick attendance
         let selectedEventId = localStorage.getItem('tickAttendanceSelectedEventId') || null;
         const section = document.getElementById(sectionElementId);
         section.style.display = '';
-        if (!selectedEventId) {
+        if (!selectedEventId) { // 
             // Stage 1: Select or create event
             let sortedEvents = this.getSortedEvents();
             let eventOptions = sortedEvents.map(ev => `<option value="${ev['ID']}">${ev['Event Name']} (${ev['ID']})</option>`).join('');
             let eventSelect = `
                 <div class="mb-3">
-                    <label for="eventSelect" class="form-label">Select Event:</label>
+                    <label for="eventSelect" class="form-label">選擇事件:</label>
                     <select id="eventSelect" class="form-select">
-                        <option value="">-- Select an event --</option>
+                        <option value="">-- 選擇事件 --</option>
                         ${eventOptions}
                     </select>
                 </div>
                 <div class="mb-3">
-                    <button class="btn btn-success" id="createNewEventBtn"><i class="bi bi-plus-circle"></i> Create New Event</button>
+                    <button class="btn btn-success" id="createNewEventBtn"><i class="bi bi-plus-circle"></i>建立新事件</button>
                 </div>
                 <div id="createEventFormContainer"></div>
             `;
@@ -170,7 +181,7 @@ const AttendanceTickingManager = {
             document.getElementById('eventSelect').addEventListener('change', function() {
                 if (this.value) {
                     localStorage.setItem('tickAttendanceSelectedEventId', this.value);
-                    AttendanceTickingManager.showAttendanceTicking(workbook, sectionElementId);
+                    AttendanceTickingManager.showAttendanceTicking(sectionElementId);
                 }
             });
             document.getElementById('createNewEventBtn').addEventListener('click', function(e) {
@@ -179,241 +190,80 @@ const AttendanceTickingManager = {
             });
         } else {
             // Stage 2: Tick attendance for selected event
-            section.innerHTML = `<div class="mb-3 text-end"><button class="btn btn-secondary" id="changeEventBtn"><i class="bi bi-arrow-left-circle"></i> Change Event</button></div><div id="attendanceTick"></div><div id="saveStatus"></div>`;
+            section.innerHTML = `<div class="mb-3 text-end"><button class="btn btn-secondary" id="changeEventBtn"><i class="bi bi-arrow-left-circle"></i>更改事件</button></div><div id="attendanceTick"></div><div id="saveStatus"></div>`;
             document.getElementById('changeEventBtn').addEventListener('click', function() {
                 localStorage.removeItem('tickAttendanceSelectedEventId');
-                AttendanceTickingManager.showAttendanceTicking(workbook, sectionElementId);
+                AttendanceTickingManager.showAttendanceTicking(sectionElementId);
             });
             this.renderTicking(selectedEventId);
-        }
+        }   
     },
 
     renderCreateEventForm(sectionElementId) {
-        // Simple create event form (reuse AddEventManager if available)
         const container = document.getElementById('createEventFormContainer');
         if (!container) return;
-        // If AddEventManager exists, use its form rendering
-        if (typeof AddEventManager !== 'undefined') {
-            // Render AddEventManager form and hook into its addNewEvent
-            AddEventManager.renderAddEventForm();
-            // After event is added, refresh event list and auto-select new event
-            const origAddNewEvent = AddEventManager.addNewEvent.bind(AddEventManager);
-            AddEventManager.addNewEvent = () => {
-                origAddNewEvent();
-                // Find the latest event (by max ID)
-                let events = XLSX.utils.sheet_to_json(this.workbook.Sheets['event']);
-                let maxId = events.reduce((max, ev) => {
-                    let num = parseInt((ev.ID||'').replace('E',''));
-                    return (!isNaN(num) && num > max) ? num : max;
-                }, 0);
-                let newId = 'E' + String(maxId).padStart(3, '0');
-                localStorage.setItem('tickAttendanceSelectedEventId', newId);
-                // Refresh UI to stage 2
-                AttendanceTickingManager.showAttendanceTicking(this.workbook, sectionElementId);
-            };
-            // Move AddEventManager form into our container
-            const addEventSection = document.getElementById('addEventSection');
-            if (addEventSection) {
-                container.innerHTML = '';
-                container.appendChild(addEventSection.firstElementChild.cloneNode(true));
+        
+        // Get existing event types for typeahead
+        const existingEventTypes = [...new Set(DataHelper.getEvents().map(e => e['Event Type']).filter(type => type && type.trim()))];
+        
+        // Simple inline form
+        container.innerHTML = `
+            <form id="inlineCreateEventForm">
+                <div class="mb-2"><input type="text" class="form-control" id="newEventName" placeholder="選擇事件" required></div>
+                <div class="mb-2 position-relative">
+                    <input type="text" class="form-control" id="newEventType" placeholder="事件類別" required list="newEventTypeSuggestions" autocomplete="off">
+                    <datalist id="newEventTypeSuggestions">
+                        ${existingEventTypes.map(type => `<option value="${type}">`).join('')}
+                    </datalist>
+                </div>
+                <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventFrom" required></div>
+                <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventTo" required></div>
+                <button type="submit" class="btn btn-primary">建立新事件</button>
+            </form>
+        `;
+        document.getElementById('inlineCreateEventForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('newEventName').value.trim();
+            const type = document.getElementById('newEventType').value.trim();
+            const from = document.getElementById('newEventFrom').value;
+            const to = document.getElementById('newEventTo').value;
+            if (!name || !type || !from || !to) {
+                showNotification('必需填寫全部欄位', 'danger');
+                return;
             }
-        } else {
-            // Fallback: simple inline form
-            container.innerHTML = `
-                <form id="inlineCreateEventForm">
-                    <div class="mb-2"><input type="text" class="form-control" id="newEventName" placeholder="Event Name" required></div>
-                    <div class="mb-2"><input type="text" class="form-control" id="newEventType" placeholder="Event Type" required></div>
-                    <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventFrom" required></div>
-                    <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventTo" required></div>
-                    <button type="submit" class="btn btn-primary">Create Event</button>
-                </form>
-            `;
-            document.getElementById('inlineCreateEventForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                // Add event logic (similar to AddEventManager)
-                const name = document.getElementById('newEventName').value.trim();
-                const type = document.getElementById('newEventType').value.trim();
-                const from = document.getElementById('newEventFrom').value;
-                const to = document.getElementById('newEventTo').value;
-                if (!name || !type || !from || !to) {
-                    showNotification('Please fill in all event fields.', 'danger');
-                    return;
-                }
-                let events = XLSX.utils.sheet_to_json(AttendanceTickingManager.workbook.Sheets['event']);
-                let maxId = 0;
-                events.forEach(ev => {
-                    const num = parseInt((ev.ID||'').replace('E',''));
-                    if (!isNaN(num) && num > maxId) maxId = num;
-                });
-                const newId = 'E' + String(maxId + 1).padStart(3, '0');
-                events.push({ ID: newId, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
-                // Update event sheet
-                const wsEvent = XLSX.utils.json_to_sheet(events, { header: ["ID", "Event Name", "Event Type", "Datetime From", "Datetime To"] });
-                AttendanceTickingManager.workbook.Sheets['event'] = wsEvent;
-                // Add new event column to attendance if not present
-                let attMatrix = XLSX.utils.sheet_to_json(AttendanceTickingManager.workbook.Sheets['attendance'], {header:1});
-                let header = attMatrix[0] || ["Attendee ID"];
-                if (!header.includes(newId)) {
-                    header.push(newId);
-                    for (let i = 1; i < attMatrix.length; ++i) {
-                        attMatrix[i].push("");
-                    }
-                }
-                // Update workbook attendance
-                const wsAtt = XLSX.utils.aoa_to_sheet(attMatrix);
-                AttendanceTickingManager.workbook.Sheets['attendance'] = wsAtt;
-                showNotification('Event added successfully!', 'success');
-                localStorage.setItem('tickAttendanceSelectedEventId', newId);
-                AttendanceTickingManager.showAttendanceTicking(AttendanceTickingManager.workbook, sectionElementId);
+            let events = DataHelper.getEvents();
+            let maxId = 0;
+            events.forEach(ev => {
+                const num = parseInt((ev.ID||'').replace('E',''));
+                if (!isNaN(num) && num > maxId) maxId = num;
             });
-        }
-    },
-
-    // Utility to get sorted events by start datetime desc
-    getSortedEvents() {
-        return this.eventSheet.slice().sort((a, b) => {
-            const aTime = new Date(a['Datetime From'] || a['Datetime from'] || a['Start'] || 0).getTime();
-            const bTime = new Date(b['Datetime From'] || b['Datetime from'] || b['Start'] || 0).getTime();
-            return bTime - aTime;
+            const newId = 'E' + String(maxId + 1).padStart(3, '0');
+            const newEvent = { ID: newId, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to };
+            // Update event sheet
+            DataHelper.addEvent(newEvent);
+            // Add new event column to attendance if not present
+            let attMatrix = DataHelper.getAttendanceMatrix();
+            let header = attMatrix[0] || ["Attendee ID"];
+            if (!header.includes(newId)) {
+                header.push(newId);
+                for (let i = 1; i < attMatrix.length; ++i) {
+                    attMatrix[i].push("");
+                }
+            }
+            // Update workbook attendance
+            DataHelper.setAttendanceMatrix(attMatrix);
+            showNotification('成功建立新事件', 'success');
+            localStorage.setItem('tickAttendanceSelectedEventId', newId);
+            AttendanceTickingManager.showAttendanceTicking(sectionElementId);
         });
-    },
-
-    showAttendanceTicking(workbook, sectionElementId) {
-        this.workbook = workbook;
-        this.attendeeSheet = XLSX.utils.sheet_to_json(workbook.Sheets['attendee']);
-        this.eventSheet = XLSX.utils.sheet_to_json(workbook.Sheets['event']);
-        if (!this.attendeeSheet.length) {
-            document.getElementById(sectionElementId).innerHTML = '<div class="alert alert-warning">No attendees found in the attendee sheet.</div>';
-            return;
-        }
-        this.attMatrix = XLSX.utils.sheet_to_json(workbook.Sheets['attendance'], {header:1});
-        // Two-stage UI: Stage 1 = select/create event, Stage 2 = tick attendance
-        let selectedEventId = localStorage.getItem('tickAttendanceSelectedEventId') || null;
-        const section = document.getElementById(sectionElementId);
-        section.style.display = '';
-        if (!selectedEventId) {
-            // Stage 1: Select or create event
-            let sortedEvents = this.getSortedEvents();
-            let eventOptions = sortedEvents.map(ev => `<option value="${ev['ID']}">${ev['Event Name']} (${ev['ID']})</option>`).join('');
-            let eventSelect = `
-                <div class="mb-3">
-                    <label for="eventSelect" class="form-label">Select Event:</label>
-                    <select id="eventSelect" class="form-select">
-                        <option value="">-- Select an event --</option>
-                        ${eventOptions}
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <button class="btn btn-success" id="createNewEventBtn"><i class="bi bi-plus-circle"></i> Create New Event</button>
-                </div>
-                <div id="createEventFormContainer"></div>
-            `;
-            section.innerHTML = eventSelect;
-            document.getElementById('eventSelect').addEventListener('change', function() {
-                if (this.value) {
-                    localStorage.setItem('tickAttendanceSelectedEventId', this.value);
-                    AttendanceTickingManager.showAttendanceTicking(workbook, sectionElementId);
-                }
-            });
-            document.getElementById('createNewEventBtn').addEventListener('click', function(e) {
-                e.preventDefault();
-                AttendanceTickingManager.renderCreateEventForm(sectionElementId);
-            });
-        } else {
-            // Stage 2: Tick attendance for selected event
-            section.innerHTML = `<div class="mb-3 text-end"><button class="btn btn-secondary" id="changeEventBtn"><i class="bi bi-arrow-left-circle"></i> Change Event</button></div><div id="attendanceTick"></div><div id="saveStatus"></div>`;
-            document.getElementById('changeEventBtn').addEventListener('click', function() {
-                localStorage.removeItem('tickAttendanceSelectedEventId');
-                AttendanceTickingManager.showAttendanceTicking(workbook, sectionElementId);
-            });
-            this.renderTicking(selectedEventId);
-        }
-    },
-
-    renderCreateEventForm(sectionElementId) {
-        // Simple create event form (reuse AddEventManager if available)
-        const container = document.getElementById('createEventFormContainer');
-        if (!container) return;
-        // If AddEventManager exists, use its form rendering
-        if (typeof AddEventManager !== 'undefined') {
-            // Render AddEventManager form and hook into its addNewEvent
-            AddEventManager.renderAddEventForm();
-            // After event is added, refresh event list and auto-select new event
-            const origAddNewEvent = AddEventManager.addNewEvent.bind(AddEventManager);
-            AddEventManager.addNewEvent = () => {
-                origAddNewEvent();
-                // Find the latest event (by max ID)
-                let events = XLSX.utils.sheet_to_json(this.workbook.Sheets['event']);
-                let maxId = events.reduce((max, ev) => {
-                    let num = parseInt((ev.ID||'').replace('E',''));
-                    return (!isNaN(num) && num > max) ? num : max;
-                }, 0);
-                let newId = 'E' + String(maxId).padStart(3, '0');
-                localStorage.setItem('tickAttendanceSelectedEventId', newId);
-                // Refresh UI to stage 2
-                AttendanceTickingManager.showAttendanceTicking(this.workbook, sectionElementId);
-            };
-            // Move AddEventManager form into our container
-            const addEventSection = document.getElementById('addEventSection');
-            if (addEventSection) {
-                container.innerHTML = '';
-                container.appendChild(addEventSection.firstElementChild.cloneNode(true));
-            }
-        } else {
-            // Fallback: simple inline form
-            container.innerHTML = `
-                <form id="inlineCreateEventForm">
-                    <div class="mb-2"><input type="text" class="form-control" id="newEventName" placeholder="Event Name" required></div>
-                    <div class="mb-2"><input type="text" class="form-control" id="newEventType" placeholder="Event Type" required></div>
-                    <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventFrom" required></div>
-                    <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventTo" required></div>
-                    <button type="submit" class="btn btn-primary">Create Event</button>
-                </form>
-            `;
-            document.getElementById('inlineCreateEventForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                // Add event logic (similar to AddEventManager)
-                const name = document.getElementById('newEventName').value.trim();
-                const type = document.getElementById('newEventType').value.trim();
-                const from = document.getElementById('newEventFrom').value;
-                const to = document.getElementById('newEventTo').value;
-                if (!name || !type || !from || !to) {
-                    showNotification('Please fill in all event fields.', 'danger');
-                    return;
-                }
-                let events = XLSX.utils.sheet_to_json(AttendanceTickingManager.workbook.Sheets['event']);
-                let maxId = 0;
-                events.forEach(ev => {
-                    const num = parseInt((ev.ID||'').replace('E',''));
-                    if (!isNaN(num) && num > maxId) maxId = num;
-                });
-                const newId = 'E' + String(maxId + 1).padStart(3, '0');
-                events.push({ ID: newId, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
-                // Update event sheet
-                const wsEvent = XLSX.utils.json_to_sheet(events, { header: ["ID", "Event Name", "Event Type", "Datetime From", "Datetime To"] });
-                AttendanceTickingManager.workbook.Sheets['event'] = wsEvent;
-                // Add new event column to attendance if not present
-                let attMatrix = XLSX.utils.sheet_to_json(AttendanceTickingManager.workbook.Sheets['attendance'], {header:1});
-                let header = attMatrix[0] || ["Attendee ID"];
-                if (!header.includes(newId)) {
-                    header.push(newId);
-                    for (let i = 1; i < attMatrix.length; ++i) {
-                        attMatrix[i].push("");
-                    }
-                }
-                // Update workbook attendance
-                const wsAtt = XLSX.utils.aoa_to_sheet(attMatrix);
-                AttendanceTickingManager.workbook.Sheets['attendance'] = wsAtt;
-                showNotification('Event added successfully!', 'success');
-                localStorage.setItem('tickAttendanceSelectedEventId', newId);
-                AttendanceTickingManager.showAttendanceTicking(AttendanceTickingManager.workbook, sectionElementId);
-            });
-        }
+        
+        // Initialize typeahead functionality for newEventType
+        this.initNewEventTypeTypeahead();
     },
 
     renderTicking(eventId) {
         // Find event
-        const event = this.eventSheet.find(ev => ev['ID'] === eventId);
+        const event = this.eventSheet.find(ev => String(ev['ID']) === String(eventId));
         // Attendance table for this event
         let header = this.attMatrix[0] || ["Attendee ID"];
         let eventColIdx = header.indexOf(eventId);
@@ -432,14 +282,14 @@ const AttendanceTickingManager = {
         // Search box
         let searchBox = `
             <div class="mb-3">
-                <input type="text" id="attendeeSearch" class="form-control" placeholder="Search by name or nickname...">
+                <input type="text" id="attendeeSearch" class="form-control" placeholder="尋找姓名 / 別名">
             </div>
         `;
         // Build table
         let table = `
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Tick attendance for ${event ? event['Event Name'] : eventId}</h5>
+                    <h5 class="mb-0">填寫出席率 ${event ? event['Event Name'] : eventId}</h5>
                 </div>
                 <div class="card-body">
                     <form id="attendanceForm">
@@ -448,20 +298,21 @@ const AttendanceTickingManager = {
                             <table id="attendanceTable" class="table table-hover">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Full Name</th>
-                                        <th>Nick Name</th>
-                                        <th>Present</th>
+                                        <th class="name">姓名</th>
+                                        <th class="checkAttendance">簽到</th>
                                     </tr>
                                 </thead>
                                 <tbody id="attendanceTableBody">
         `;
         this.attendeeSheet.forEach(row => {
-            let checked = (attMap[row['ID']] && attMap[row['ID']][eventColIdx] === 'Yes') ? 'checked' : '';
+            let checked = (attMap[row['ID']] && attMap[row['ID']][eventColIdx] === '是') ? 'checked' : '';
+            const fullName = row['Full Name'] || '';
+            const nickName = row['Nick Name'] || '';
+            const displayName = nickName ? `${fullName}, ${nickName}` : fullName;
             table += `
                 <tr>
-                    <td class="text-break">${row['Full Name']||''}</td>
-                    <td class="text-break">${row['Nick Name']||''}</td>
-                    <td class="text-center">
+                    <td class="text-break name">${displayName}</td>
+                    <td class="text-center checkAttendance">
                         <div class="form-check d-flex justify-content-center">
                             <input class="form-check-input" type="checkbox" name="present" value="${row['ID']}" ${checked}>
                         </div>
@@ -480,11 +331,14 @@ const AttendanceTickingManager = {
         document.getElementById('attendanceTick').innerHTML = table;
         // Search/filter logic
         const attendeeRows = this.attendeeSheet.map(row => {
-            let checked = (attMap[row['ID']] && attMap[row['ID']][eventColIdx] === 'Yes') ? 'checked' : '';
+            let checked = (attMap[row['ID']] && attMap[row['ID']][eventColIdx] === '是') ? 'checked' : '';
+            const fullName = row['Full Name'] || '';
+            const nickName = row['Nick Name'] || '';
+            const displayName = nickName ? `${fullName}, ${nickName}` : fullName;
             return {
-                html: `<tr><td class=\"text-break\">${row['Full Name']||''}</td><td class=\"text-break\">${row['Nick Name']||''}</td><td class=\"text-center\"><div class=\"form-check d-flex justify-content-center\"><input class=\"form-check-input\" type=\"checkbox\" name=\"present\" value=\"${row['ID']}\" ${checked}></div></td></tr>`,
-                fullName: (row['Full Name']||'').toLowerCase(),
-                nickName: (row['Nick Name']||'').toLowerCase(),
+                html: `<tr><td class=\"text-break name\">${displayName}</td><td class=\"text-center checkAttendance\"><div class=\"form-check d-flex justify-content-center\"><input class=\"form-check-input\" type=\"checkbox\" name=\"present\" value=\"${row['ID']}\" ${checked}></div></td></tr>`,
+                fullName: (row['Full Name']||'').toString().toLowerCase(),
+                nickName: (row['Nick Name']||'').toString().toLowerCase(),
             };
         });
         document.getElementById('attendeeSearch').addEventListener('input', function() {
@@ -497,6 +351,24 @@ const AttendanceTickingManager = {
         document.getElementById('attendanceForm').addEventListener('submit', (ev) => {
             ev.preventDefault();
             this.saveAttendance(eventId, eventColIdx, attMap, header);
+        });
+
+        // Add immediate save to workbook on checkbox change
+        const checkboxes = document.querySelectorAll('input[name="present"]');
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const attendeeId = cb.value;
+                let arr = attMap[attendeeId];
+                if (!arr) {
+                    arr = Array(header.length).fill("");
+                    arr[0] = attendeeId;
+                    this.attMatrix.push(arr);
+                    attMap[attendeeId] = arr;
+                }
+                arr[eventColIdx] = cb.checked ? '是' : '否';
+                // Save updated matrix to workbook immediately
+                DataHelper.setAttendanceMatrix(this.attMatrix);
+            });
         });
     },
 
@@ -512,27 +384,124 @@ const AttendanceTickingManager = {
                 this.attMatrix.push(arr);
                 attMap[row['ID']] = arr;
             }
-            arr[eventColIdx] = checked.includes(row['ID']) ? 'Yes' : 'No';
+            arr[eventColIdx] = checked.includes(row['ID']) ? '是' : '否';
         });
         
         // Write back to workbook
-        const wsAtt = XLSX.utils.aoa_to_sheet(this.attMatrix);
-        this.workbook.Sheets['attendance'] = wsAtt;
+        DataHelper.updateAttendanceMatrix(this.attMatrix);
         
-        // Download updated file
-        const wbout = XLSX.write(this.workbook, {bookType:'xlsx', type:'array'});
-        const blob = new Blob([wbout], {type: "application/octet-stream"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'attendance_updated.xlsx';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // Download updated file using DataHelper
+        DataHelper.downloadWorkbook();
         
         // Show success message
-        showNotification('Attendance saved and file downloaded!', 'success');
-        document.getElementById('saveStatus').innerHTML = '<div class="alert alert-success">Attendance saved and file downloaded!</div>';
+        showNotification('點名試算表已成功下載', 'success');
+        document.getElementById('saveStatus').innerHTML = '<div class="alert alert-success">點名試算表已成功下載</div>';
     },
+
+    initNewEventTypeTypeahead() {
+        const input = document.getElementById('newEventType');
+        if (!input) return;
+
+        // Get existing event types
+        const existingEventTypes = [...new Set(DataHelper.getEvents().map(e => e['Event Type']).filter(type => type && type.trim()))];
+        
+        // Create dropdown container
+        const dropdownContainer = document.createElement('div');
+        dropdownContainer.className = 'position-absolute w-100 bg-white border rounded shadow-sm';
+        dropdownContainer.style.cssText = 'top: 100%; left: 0; z-index: 1000; max-height: 200px; overflow-y: auto; display: none;';
+        dropdownContainer.id = 'newEventTypeDropdown';
+        
+        // Insert dropdown after input
+        input.parentNode.appendChild(dropdownContainer);
+        
+        // Function to show suggestions
+        const showSuggestions = (query) => {
+            let filteredTypes;
+            
+            if (!query.trim()) {
+                // Show all options when input is empty
+                filteredTypes = existingEventTypes;
+            } else {
+                // Filter based on query
+                filteredTypes = existingEventTypes.filter(type => 
+                    type.toLowerCase().includes(query.toLowerCase())
+                );
+            }
+            
+            if (filteredTypes.length === 0) {
+                dropdownContainer.style.display = 'none';
+                return;
+            }
+            
+            dropdownContainer.innerHTML = filteredTypes.map(type => 
+                `<div class="dropdown-item p-2 cursor-pointer" data-value="${type}">${type}</div>`
+            ).join('');
+            
+            dropdownContainer.style.display = 'block';
+            
+            // Add hover effects
+            dropdownContainer.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('mouseenter', () => {
+                    item.style.backgroundColor = '#f8f9fa';
+                });
+                item.addEventListener('mouseleave', () => {
+                    item.style.backgroundColor = '';
+                });
+                item.addEventListener('click', () => {
+                    input.value = item.dataset.value;
+                    dropdownContainer.style.display = 'none';
+                    input.focus();
+                });
+            });
+        };
+        
+        // Event listeners
+        input.addEventListener('input', (e) => {
+            showSuggestions(e.target.value);
+        });
+        
+        input.addEventListener('focus', () => {
+            showSuggestions(input.value);
+        });
+        
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !dropdownContainer.contains(e.target)) {
+                dropdownContainer.style.display = 'none';
+            }
+        });
+        
+        // Keyboard navigation
+        input.addEventListener('keydown', (e) => {
+            const visibleItems = dropdownContainer.querySelectorAll('.dropdown-item');
+            const currentIndex = Array.from(visibleItems).findIndex(item => 
+                item.style.backgroundColor === 'rgb(248, 249, 250)'
+            );
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (visibleItems.length > 0) {
+                    const nextIndex = currentIndex < visibleItems.length - 1 ? currentIndex + 1 : 0;
+                    visibleItems.forEach(item => item.style.backgroundColor = '');
+                    visibleItems[nextIndex].style.backgroundColor = '#f8f9fa';
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (visibleItems.length > 0) {
+                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : visibleItems.length - 1;
+                    visibleItems.forEach(item => item.style.backgroundColor = '');
+                    visibleItems[prevIndex].style.backgroundColor = '#f8f9fa';
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const selectedItem = dropdownContainer.querySelector('.dropdown-item[style*="background-color: rgb(248, 249, 250)"]');
+                if (selectedItem) {
+                    input.value = selectedItem.dataset.value;
+                    dropdownContainer.style.display = 'none';
+                }
+            } else if (e.key === 'Escape') {
+                dropdownContainer.style.display = 'none';
+            }
+        });
+    }
 };
