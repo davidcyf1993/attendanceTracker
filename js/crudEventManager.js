@@ -22,9 +22,9 @@ const CrudEventManager = {
             let present = 0, total = 0;
             rows.forEach(row => {
                 let val = row[i];
-                if (val && (val.toString().trim().toLowerCase() === 'yes' || val.toString().trim().toLowerCase() === 'no')) {
+                if (val && (val.toString().trim().toLowerCase() === '是' || val.toString().trim().toLowerCase() === '否')) {
                     total++;
-                    if (val.toString().trim().toLowerCase() === 'yes') present++;
+                    if (val.toString().trim().toLowerCase() === '是') present++;
                 }
             });
             eventIdToPercent[eventId] = total ? Math.round((present / total) * 100) : null;
@@ -69,17 +69,17 @@ const CrudEventManager = {
             return label + greyUpArrow + greyDownArrow;
         }
         let table = `<div class="mb-3 text-end">
-            <button class="btn btn-success" id="addEventBtn"><i class="bi bi-plus-circle"></i> Add Event</button>
+            <button class="btn btn-success" id="addEventBtn"><i class="bi bi-plus-circle"></i>建立新事件</button>
         </div>`;
         // searchBox is now in HTML, do not add here
         table += `<div class="table-responsive"><table class="table table-hover"><thead><tr>
-            <th class="sortable" data-key="ID">${thLabel('ID', 'ID')}</th>
-            <th class="sortable" data-key="Event Name">${thLabel('Event Name', 'Event Name')}</th>
-            <th class="sortable" data-key="Event Type">${thLabel('Event Type', 'Event Type')}</th>
-            <th class="sortable" data-key="Datetime From">${thLabel('Datetime From', 'Datetime From')}</th>
-            <th class="sortable" data-key="Datetime To">${thLabel('Datetime To', 'Datetime To')}</th>
-            <th class="sortable" data-key="Attendance %">${thLabel('Attendance %', 'Attendance %')}</th>
-            <th>Actions</th></tr></thead><tbody id="crudEventTableBody">`;
+            <th class="sortable" data-key="ID">${thLabel('編號', 'ID')}</th>
+            <th class="sortable" data-key="Event Name">${thLabel('事件名稱', 'Event Name')}</th>
+            <th class="sortable" data-key="Event Type">${thLabel('事件類別', 'Event Type')}</th>
+            <th class="sortable" data-key="Datetime From">${thLabel('事件開始時間', 'Datetime From')}</th>
+            <th class="sortable" data-key="Datetime To">${thLabel('事件結束時間', 'Datetime To')}</th>
+            <th class="sortable" data-key="Attendance %">${thLabel('出席率 %', 'Attendance %')}</th>
+            <th>動作</th></tr></thead><tbody id="crudEventTableBody">`;
         sortedSheet.forEach(ev => {
             let percent = eventIdToPercent[ev['ID']];
             table += `<tr>
@@ -171,8 +171,8 @@ const CrudEventManager = {
                 <label class="form-label">Datetime To</label>
                 <input type="datetime-local" class="form-control" id="eventTo" value="${ev['Datetime To'] || ''}" required />
             </div>
-            <button type="submit" class="btn btn-primary">${isEdit ? 'Update' : 'Add'} Event</button>
-            <button type="button" class="btn btn-secondary ms-2" id="cancelEventBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary">${isEdit ? '更改' : '建立'}事件</button>
+            <button type="button" class="btn btn-secondary ms-2" id="cancelEventBtn">取消</button>
         </form>`;
         document.getElementById('eventForm').onsubmit = (e) => {
             e.preventDefault();
@@ -191,26 +191,28 @@ const CrudEventManager = {
         const from = document.getElementById('eventFrom').value;
         const to = document.getElementById('eventTo').value;
         if (!id || !name || !type || !from || !to) {
-            showNotification('All fields are required.', 'danger');
+            showNotification('必需填寫全部欄位', 'danger');
             return;
         }
         if (isEdit) {
             DataHelper.updateEvent(id, { 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
         } else {
             if (DataHelper.getEvents().some(e => String(e['ID']) === String(id))) {
-                showNotification('ID already exists.', 'danger');
+                showNotification('編號重復', 'danger');
                 return;
             }
             DataHelper.addEvent({ 'ID': id, 'Event Name': name, 'Event Type': type, 'Datetime From': from, 'Datetime To': to });
         }
-        showNotification('Event saved.', 'success');
+        showNotification('事件已儲存', 'success');
         this.renderCrudEvent();
     },
 
     deleteEvent(id) {
-        if (!confirm('Delete this event?')) return;
+        var currentEvent = DataHelper.getEvents().filter(e => String(e['ID']) === String(id))[0];
+        if (!confirm('刪除事件?\n編號: ' + currentEvent['ID'] + '\n事件名稱: ' + currentEvent['Event Name'])) return;
+
         DataHelper.deleteEvent(id);
-        showNotification('Event deleted.', 'success');
+        showNotification('事件已刪除', 'success');
         this.renderCrudEvent();
     },
 
