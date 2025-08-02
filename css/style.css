@@ -211,6 +211,10 @@ input[type="checkbox"] {
     border: 1px solid #c8e6c9;
 }
 
+i.bi {
+    padding-right: 10px;
+}
+
 /* Form sections */
 .section {
     margin-bottom: 2em;

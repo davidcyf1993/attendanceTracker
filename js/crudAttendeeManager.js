@@ -41,13 +41,13 @@ const CrudAttendeeManager = {
             return label + greyUpArrow + greyDownArrow;
         }
         let table = `<div class="mb-3 text-end">
-            <button class="btn btn-success" id="addAttendeeBtn"><i class="bi bi-plus-circle"></i> Add Attendee</button>
+            <button class="btn btn-success" id="addAttendeeBtn"><i class="bi bi-plus-circle"></i>新增參加者</button>
         </div>`;
         table += `<div class="table-responsive"><table class="table table-hover"><thead><tr>
-            <th class="sortable" data-key="ID">${thLabel('ID', 'ID')}</th>
-            <th class="sortable" data-key="Full Name">${thLabel('Full Name', 'Full Name')}</th>
-            <th class="sortable" data-key="Nick Name">${thLabel('Nick Name', 'Nick Name')}</th>
-            <th>Actions</th></tr></thead><tbody id="crudAttendeeTableBody">`;
+            <th class="sortable" data-key="ID">${thLabel('編號', 'ID')}</th>
+            <th class="sortable" data-key="Full Name">${thLabel('姓名', 'Full Name')}</th>
+            <th class="sortable" data-key="Nick Name">${thLabel('別名', 'Nick Name')}</th>
+            <th>動作</th></tr></thead><tbody id="crudAttendeeTableBody">`;
         sortedSheet.forEach(att => {
             table += `<tr>
                 <td>${att['ID']}</td>
@@ -119,8 +119,8 @@ const CrudAttendeeManager = {
                 <label class="form-label">Nick Name</label>
                 <input type="text" class="form-control" id="attendeeNickName" value="${att['Nick Name'] || ''}" />
             </div>
-            <button type="submit" class="btn btn-primary">${isEdit ? 'Update' : 'Add'} Attendee</button>
-            <button type="button" class="btn btn-secondary ms-2" id="cancelAttendeeBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary">${isEdit ? '更改' : '新增'}參加者</button>
+            <button type="button" class="btn btn-secondary ms-2" id="cancelAttendeeBtn">取消</button>
         </form>`;
         document.getElementById('attendeeForm').onsubmit = (e) => {
             e.preventDefault();
@@ -134,26 +134,28 @@ const CrudAttendeeManager = {
         const fullName = document.getElementById('attendeeFullName').value.trim();
         const nickName = document.getElementById('attendeeNickName').value.trim();
         if (!id || !fullName) {
-            showNotification('ID and Full Name are required.', 'danger');
+            showNotification('必需填寫編號及姓名', 'danger');
             return;
         }
         if (isEdit) {
             DataHelper.updateAttendee(id, { 'Full Name': fullName, 'Nick Name': nickName });
         } else {
             if (DataHelper.getAttendees().some(a => String(a['ID']) === String(id))) {
-                showNotification('ID already exists.', 'danger');
+                showNotification('編號重復', 'danger');
                 return;
             }
             DataHelper.addAttendee({ 'ID': id, 'Full Name': fullName, 'Nick Name': nickName });
         }
-        showNotification('Attendee saved.', 'success');
+        showNotification('參加者資料已儲存', 'success');
         this.renderCrudAttendee();
     },
 
     deleteAttendee(id) {
-        if (!confirm('Delete this attendee?')) return;
+        var currentAttendee = DataHelper.getAttendees().filter(a => String(a['ID']) === String(id))[0];
+        if (!confirm('刪除參加者資料?\n編號: ' + currentAttendee['ID'] + '\n事件名稱: ' + currentAttendee['Full Name'])) return;
+
         DataHelper.deleteAttendee(id);
-        showNotification('Attendee deleted.', 'success');
+        showNotification('參加者資料已刪除', 'success');
         this.renderCrudAttendee();
     }
 };

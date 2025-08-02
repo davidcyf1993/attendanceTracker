@@ -124,7 +124,7 @@ const AttendanceTickingManager = {
         const file = fileInput.files[0];
         
         if (!file) {
-            this.showFileStatus('Please select an Excel file.', 'error', statusElementId);
+            this.showFileStatus('選擇試算表', 'error', statusElementId);
             return;
         }
 
@@ -152,7 +152,7 @@ const AttendanceTickingManager = {
         this.attendeeSheet = DataHelper.getAttendees();
         this.eventSheet = DataHelper.getEvents();
         if (!this.attendeeSheet.length) {
-            document.getElementById(sectionElementId).innerHTML = '<div class="alert alert-warning">No attendees found in the attendee sheet.</div>';
+            document.getElementById(sectionElementId).innerHTML = '<div class="alert alert-warning">沒有參加者匯入</div>';
             return;
         }
         this.attMatrix = DataHelper.getAttendanceMatrix();
@@ -166,14 +166,14 @@ const AttendanceTickingManager = {
             let eventOptions = sortedEvents.map(ev => `<option value="${ev['ID']}">${ev['Event Name']} (${ev['ID']})</option>`).join('');
             let eventSelect = `
                 <div class="mb-3">
-                    <label for="eventSelect" class="form-label">Select Event:</label>
+                    <label for="eventSelect" class="form-label">選擇事件:</label>
                     <select id="eventSelect" class="form-select">
-                        <option value="">-- Select an event --</option>
+                        <option value="">-- 選擇事件 --</option>
                         ${eventOptions}
                     </select>
                 </div>
                 <div class="mb-3">
-                    <button class="btn btn-success" id="createNewEventBtn"><i class="bi bi-plus-circle"></i> Create New Event</button>
+                    <button class="btn btn-success" id="createNewEventBtn"><i class="bi bi-plus-circle"></i>建立新事件</button>
                 </div>
                 <div id="createEventFormContainer"></div>
             `;
@@ -190,7 +190,7 @@ const AttendanceTickingManager = {
             });
         } else {
             // Stage 2: Tick attendance for selected event
-            section.innerHTML = `<div class="mb-3 text-end"><button class="btn btn-secondary" id="changeEventBtn"><i class="bi bi-arrow-left-circle"></i> Change Event</button></div><div id="attendanceTick"></div><div id="saveStatus"></div>`;
+            section.innerHTML = `<div class="mb-3 text-end"><button class="btn btn-secondary" id="changeEventBtn"><i class="bi bi-arrow-left-circle"></i>更改事件</button></div><div id="attendanceTick"></div><div id="saveStatus"></div>`;
             document.getElementById('changeEventBtn').addEventListener('click', function() {
                 localStorage.removeItem('tickAttendanceSelectedEventId');
                 AttendanceTickingManager.showAttendanceTicking(sectionElementId);
@@ -209,16 +209,16 @@ const AttendanceTickingManager = {
         // Simple inline form
         container.innerHTML = `
             <form id="inlineCreateEventForm">
-                <div class="mb-2"><input type="text" class="form-control" id="newEventName" placeholder="Event Name" required></div>
+                <div class="mb-2"><input type="text" class="form-control" id="newEventName" placeholder="選擇事件" required></div>
                 <div class="mb-2 position-relative">
-                    <input type="text" class="form-control" id="newEventType" placeholder="Event Type" required list="newEventTypeSuggestions" autocomplete="off">
+                    <input type="text" class="form-control" id="newEventType" placeholder="事件類別" required list="newEventTypeSuggestions" autocomplete="off">
                     <datalist id="newEventTypeSuggestions">
                         ${existingEventTypes.map(type => `<option value="${type}">`).join('')}
                     </datalist>
                 </div>
                 <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventFrom" required></div>
                 <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventTo" required></div>
-                <button type="submit" class="btn btn-primary">Create Event</button>
+                <button type="submit" class="btn btn-primary">建立新事件</button>
             </form>
         `;
         document.getElementById('inlineCreateEventForm').addEventListener('submit', function(e) {
@@ -228,7 +228,7 @@ const AttendanceTickingManager = {
             const from = document.getElementById('newEventFrom').value;
             const to = document.getElementById('newEventTo').value;
             if (!name || !type || !from || !to) {
-                showNotification('Please fill in all event fields.', 'danger');
+                showNotification('必需填寫全部欄位', 'danger');
                 return;
             }
             let events = DataHelper.getEvents();
@@ -252,7 +252,7 @@ const AttendanceTickingManager = {
             }
             // Update workbook attendance
             DataHelper.setAttendanceMatrix(attMatrix);
-            showNotification('Event added successfully!', 'success');
+            showNotification('成功建立新事件', 'success');
             localStorage.setItem('tickAttendanceSelectedEventId', newId);
             AttendanceTickingManager.showAttendanceTicking(sectionElementId);
         });
@@ -282,14 +282,14 @@ const AttendanceTickingManager = {
         // Search box
         let searchBox = `
             <div class="mb-3">
-                <input type="text" id="attendeeSearch" class="form-control" placeholder="Search by name or nickname...">
+                <input type="text" id="attendeeSearch" class="form-control" placeholder="尋找姓名 / 別名">
             </div>
         `;
         // Build table
         let table = `
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Tick attendance for ${event ? event['Event Name'] : eventId}</h5>
+                    <h5 class="mb-0">填寫出席率 ${event ? event['Event Name'] : eventId}</h5>
                 </div>
                 <div class="card-body">
                     <form id="attendanceForm">
@@ -298,14 +298,14 @@ const AttendanceTickingManager = {
                             <table id="attendanceTable" class="table table-hover">
                                 <thead class="table-light">
                                     <tr>
-                                        <th class="name">Name</th>
-                                        <th class="checkAttendance">Present</th>
+                                        <th class="name">姓名</th>
+                                        <th class="checkAttendance">簽到</th>
                                     </tr>
                                 </thead>
                                 <tbody id="attendanceTableBody">
         `;
         this.attendeeSheet.forEach(row => {
-            let checked = (attMap[row['ID']] && attMap[row['ID']][eventColIdx] === 'Yes') ? 'checked' : '';
+            let checked = (attMap[row['ID']] && attMap[row['ID']][eventColIdx] === '是') ? 'checked' : '';
             const fullName = row['Full Name'] || '';
             const nickName = row['Nick Name'] || '';
             const displayName = nickName ? `${fullName}, ${nickName}` : fullName;
@@ -331,7 +331,7 @@ const AttendanceTickingManager = {
         document.getElementById('attendanceTick').innerHTML = table;
         // Search/filter logic
         const attendeeRows = this.attendeeSheet.map(row => {
-            let checked = (attMap[row['ID']] && attMap[row['ID']][eventColIdx] === 'Yes') ? 'checked' : '';
+            let checked = (attMap[row['ID']] && attMap[row['ID']][eventColIdx] === '是') ? 'checked' : '';
             const fullName = row['Full Name'] || '';
             const nickName = row['Nick Name'] || '';
             const displayName = nickName ? `${fullName}, ${nickName}` : fullName;
@@ -365,7 +365,7 @@ const AttendanceTickingManager = {
                     this.attMatrix.push(arr);
                     attMap[attendeeId] = arr;
                 }
-                arr[eventColIdx] = cb.checked ? 'Yes' : 'No';
+                arr[eventColIdx] = cb.checked ? '是' : '否';
                 // Save updated matrix to workbook immediately
                 DataHelper.setAttendanceMatrix(this.attMatrix);
             });
@@ -384,7 +384,7 @@ const AttendanceTickingManager = {
                 this.attMatrix.push(arr);
                 attMap[row['ID']] = arr;
             }
-            arr[eventColIdx] = checked.includes(row['ID']) ? 'Yes' : 'No';
+            arr[eventColIdx] = checked.includes(row['ID']) ? '是' : '否';
         });
         
         // Write back to workbook
@@ -394,8 +394,8 @@ const AttendanceTickingManager = {
         DataHelper.downloadWorkbook();
         
         // Show success message
-        showNotification('Attendance saved and file downloaded!', 'success');
-        document.getElementById('saveStatus').innerHTML = '<div class="alert alert-success">Attendance saved and file downloaded!</div>';
+        showNotification('點名試算表已成功下載', 'success');
+        document.getElementById('saveStatus').innerHTML = '<div class="alert alert-success">點名試算表已成功下載</div>';
     },
 
     initNewEventTypeTypeahead() {

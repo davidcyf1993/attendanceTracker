@@ -287,7 +287,6 @@ const DataHelper = {
         const events = this.getEvents();
         const eventTypes = events.map(event => event['Event Type']).filter(type => type && type.toString().trim() !== '');
         return [...new Set(eventTypes)];
-    },
-
+    }
 };
 
