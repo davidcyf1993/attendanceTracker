@@ -11,6 +11,13 @@ const CrudEventManager = {
     renderCrudEvent() {
         const section = document.getElementById('crudEventSection');
         if (!section) return;
+        
+        // Show search box when rendering table
+        const searchBox = document.getElementById('eventSearchBox');
+        if (searchBox) {
+            searchBox.style.display = '';
+        }
+        
         // Remove searchBox from JS, assume it is in HTML
         // Calculate attendance % for each event
         let attMatrix = DataHelper.getAttendanceMatrix();
@@ -134,6 +141,12 @@ const CrudEventManager = {
         const section = document.getElementById('crudEventSection');
         let ev = id ? DataHelper.getEvents().find(e => String(e['ID']) === String(id)) : { 'ID': '', 'Event Name': '', 'Event Type': '', 'Datetime From': '', 'Datetime To': '' };
         let isEdit = !!id;
+        
+        // Hide search box when showing form
+        const searchBox = document.getElementById('eventSearchBox');
+        if (searchBox) {
+            searchBox.style.display = 'none';
+        }
         
         // Generate new ID if creating new event
         let newId = '';
