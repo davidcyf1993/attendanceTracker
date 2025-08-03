@@ -110,11 +110,13 @@ const AttendanceTickingManager = {
         // Show Save Attendance icon button here
         const saveBtn = document.getElementById('saveAttendanceTabBtn');
         if (saveBtn) {
+
             saveBtn.classList.remove('d-none');
             // Avoid multiple event listeners
             saveBtn.onclick = function () {
-                const form = document.getElementById('attendanceForm');
-                if (form) form.requestSubmit();
+                console.log('save button clicked');
+                DataHelper.downloadWorkbook();
+
             };
         }
     },
@@ -122,7 +124,7 @@ const AttendanceTickingManager = {
     handleFileUpload(fileInputId, statusElementId, sectionElementId) {
         const fileInput = document.getElementById(fileInputId);
         const file = fileInput.files[0];
-        
+
         if (!file) {
             this.showFileStatus('選擇試算表', 'error', statusElementId);
             return;
@@ -178,13 +180,13 @@ const AttendanceTickingManager = {
                 <div id="createEventFormContainer"></div>
             `;
             section.innerHTML = eventSelect;
-            document.getElementById('eventSelect').addEventListener('change', function() {
+            document.getElementById('eventSelect').addEventListener('change', function () {
                 if (this.value) {
                     localStorage.setItem('tickAttendanceSelectedEventId', this.value);
                     AttendanceTickingManager.showAttendanceTicking(sectionElementId);
                 }
             });
-            document.getElementById('createNewEventBtn').addEventListener('click', function(e) {
+            document.getElementById('createNewEventBtn').addEventListener('click', function (e) {
                 e.preventDefault();
                 AttendanceTickingManager.renderCreateEventForm(sectionElementId);
             });
@@ -196,16 +198,16 @@ const AttendanceTickingManager = {
                 AttendanceTickingManager.showAttendanceTicking(sectionElementId);
             });
             this.renderTicking(selectedEventId);
-        }   
+        }
     },
 
     renderCreateEventForm(sectionElementId) {
         const container = document.getElementById('createEventFormContainer');
         if (!container) return;
-        
+
         // Get existing event types for typeahead
         const existingEventTypes = [...new Set(DataHelper.getEvents().map(e => e['Event Type']).filter(type => type && type.trim()))];
-        
+
         // Simple inline form
         container.innerHTML = `
             <form id="inlineCreateEventForm">
@@ -221,7 +223,7 @@ const AttendanceTickingManager = {
                 <button type="submit" class="btn btn-primary">建立新聚會</button>
             </form>
         `;
-        document.getElementById('inlineCreateEventForm').addEventListener('submit', function(e) {
+        document.getElementById('inlineCreateEventForm').addEventListener('submit', function (e) {
             e.preventDefault();
             const name = document.getElementById('newEventName').value.trim();
             const type = document.getElementById('newEventType').value.trim();
@@ -234,7 +236,7 @@ const AttendanceTickingManager = {
             let events = DataHelper.getEvents();
             let maxId = 0;
             events.forEach(ev => {
-                const num = parseInt((ev.ID||'').replace('E',''));
+                const num = parseInt((ev.ID || '').replace('E', ''));
                 if (!isNaN(num) && num > maxId) maxId = num;
             });
             const newId = 'E' + String(maxId + 1).padStart(3, '0');
@@ -256,7 +258,7 @@ const AttendanceTickingManager = {
             localStorage.setItem('tickAttendanceSelectedEventId', newId);
             AttendanceTickingManager.showAttendanceTicking(sectionElementId);
         });
-        
+
         // Initialize typeahead functionality for newEventType
         this.initNewEventTypeTypeahead();
     },
@@ -271,12 +273,12 @@ const AttendanceTickingManager = {
             // Add event column if missing
             header.push(eventId);
             this.attMatrix[0] = header;
-            for (let i=1; i<this.attMatrix.length; ++i) this.attMatrix[i].push("");
-            eventColIdx = header.length-1;
+            for (let i = 1; i < this.attMatrix.length; ++i) this.attMatrix[i].push("");
+            eventColIdx = header.length - 1;
         }
         // Build attendee map
         let attMap = {};
-        for (let i=1; i<this.attMatrix.length; ++i) {
+        for (let i = 1; i < this.attMatrix.length; ++i) {
             attMap[this.attMatrix[i][0]] = this.attMatrix[i];
         }
         // Search box
@@ -337,20 +339,16 @@ const AttendanceTickingManager = {
             const displayName = nickName ? `${fullName}, ${nickName}` : fullName;
             return {
                 html: `<tr><td class=\"text-break name\">${displayName}</td><td class=\"text-center checkAttendance\"><div class=\"form-check d-flex justify-content-center\"><input class=\"form-check-input\" type=\"checkbox\" name=\"present\" value=\"${row['ID']}\" ${checked}></div></td></tr>`,
-                fullName: (row['Full Name']||'').toString().toLowerCase(),
-                nickName: (row['Nick Name']||'').toString().toLowerCase(),
+                fullName: (row['Full Name'] || '').toString().toLowerCase(),
+                nickName: (row['Nick Name'] || '').toString().toLowerCase(),
             };
         });
-        document.getElementById('attendeeSearch').addEventListener('input', function() {
+        document.getElementById('attendeeSearch').addEventListener('input', function () {
             const val = this.value.trim().toLowerCase();
             const tbody = document.getElementById('attendanceTableBody');
             tbody.innerHTML = attendeeRows.filter(r =>
                 r.fullName.includes(val) || r.nickName.includes(val)
             ).map(r => r.html).join('');
-        });
-        document.getElementById('attendanceForm').addEventListener('submit', (ev) => {
-            ev.preventDefault();
-            this.saveAttendance(eventId, eventColIdx, attMap, header);
         });
 
         // Add immediate save to workbook on checkbox change
@@ -372,31 +370,7 @@ const AttendanceTickingManager = {
         });
     },
 
-    saveAttendance(eventId, eventColIdx, attMap, header) {
-        const checked = Array.from(document.querySelectorAll('input[name="present"]:checked')).map(cb => cb.value);
-        
-        // Update attMatrix for this event
-        this.attendeeSheet.forEach(row => {
-            let arr = attMap[row['ID']];
-            if (!arr) {
-                arr = Array(header.length).fill("");
-                arr[0] = row['ID'];
-                this.attMatrix.push(arr);
-                attMap[row['ID']] = arr;
-            }
-            arr[eventColIdx] = checked.includes(row['ID']) ? '是' : '否';
-        });
-        
-        // Write back to workbook
-        DataHelper.updateAttendanceMatrix(this.attMatrix);
-        
-        // Download updated file using DataHelper
-        DataHelper.downloadWorkbook();
-        
-        // Show success message
-        showNotification('點名試算表已成功下載', 'success');
-        document.getElementById('saveStatus').innerHTML = '<div class="alert alert-success">點名試算表已成功下載</div>';
-    },
+
 
     initNewEventTypeTypeahead() {
         const input = document.getElementById('newEventType');
@@ -404,41 +378,41 @@ const AttendanceTickingManager = {
 
         // Get existing event types
         const existingEventTypes = [...new Set(DataHelper.getEvents().map(e => e['Event Type']).filter(type => type && type.trim()))];
-        
+
         // Create dropdown container
         const dropdownContainer = document.createElement('div');
         dropdownContainer.className = 'position-absolute w-100 bg-white border rounded shadow-sm';
         dropdownContainer.style.cssText = 'top: 100%; left: 0; z-index: 1000; max-height: 200px; overflow-y: auto; display: none;';
         dropdownContainer.id = 'newEventTypeDropdown';
-        
+
         // Insert dropdown after input
         input.parentNode.appendChild(dropdownContainer);
-        
+
         // Function to show suggestions
         const showSuggestions = (query) => {
             let filteredTypes;
-            
+
             if (!query.trim()) {
                 // Show all options when input is empty
                 filteredTypes = existingEventTypes;
             } else {
                 // Filter based on query
-                filteredTypes = existingEventTypes.filter(type => 
+                filteredTypes = existingEventTypes.filter(type =>
                     type.toLowerCase().includes(query.toLowerCase())
                 );
             }
-            
+
             if (filteredTypes.length === 0) {
                 dropdownContainer.style.display = 'none';
                 return;
             }
-            
-            dropdownContainer.innerHTML = filteredTypes.map(type => 
+
+            dropdownContainer.innerHTML = filteredTypes.map(type =>
                 `<div class="dropdown-item p-2 cursor-pointer" data-value="${type}">${type}</div>`
             ).join('');
-            
+
             dropdownContainer.style.display = 'block';
-            
+
             // Add hover effects
             dropdownContainer.querySelectorAll('.dropdown-item').forEach(item => {
                 item.addEventListener('mouseenter', () => {
@@ -454,30 +428,30 @@ const AttendanceTickingManager = {
                 });
             });
         };
-        
+
         // Event listeners
         input.addEventListener('input', (e) => {
             showSuggestions(e.target.value);
         });
-        
+
         input.addEventListener('focus', () => {
             showSuggestions(input.value);
         });
-        
+
         // Hide dropdown when clicking outside
         document.addEventListener('click', (e) => {
             if (!input.contains(e.target) && !dropdownContainer.contains(e.target)) {
                 dropdownContainer.style.display = 'none';
             }
         });
-        
+
         // Keyboard navigation
         input.addEventListener('keydown', (e) => {
             const visibleItems = dropdownContainer.querySelectorAll('.dropdown-item');
-            const currentIndex = Array.from(visibleItems).findIndex(item => 
+            const currentIndex = Array.from(visibleItems).findIndex(item =>
                 item.style.backgroundColor === 'rgb(248, 249, 250)'
             );
-            
+
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 if (visibleItems.length > 0) {
