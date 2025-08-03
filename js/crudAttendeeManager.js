@@ -11,6 +11,13 @@ const CrudAttendeeManager = {
     renderCrudAttendee() {
         const section = document.getElementById('crudAttendeeSection');
         if (!section) return;
+        
+        // Show search box when rendering table
+        const searchBox = document.getElementById('attendeeSearchBox');
+        if (searchBox) {
+            searchBox.style.display = '';
+        }
+        
         let sortKey = this._sortKey || 'ID';
         let sortDir = this._sortDir || 1;
         let filter = String(this._searchText || '').toLowerCase();
@@ -98,6 +105,12 @@ const CrudAttendeeManager = {
         const section = document.getElementById('crudAttendeeSection');
         let att = id ? DataHelper.getAttendees().find(a => String(a['ID']) === String(id)) : { 'ID': '', 'Full Name': '', 'Nick Name': '' };
         let isEdit = !!id;
+        
+        // Hide search box when showing form
+        const searchBox = document.getElementById('attendeeSearchBox');
+        if (searchBox) {
+            searchBox.style.display = 'none';
+        }
         
         // Generate new ID if creating new attendee
         let newId = '';
