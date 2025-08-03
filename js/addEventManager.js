@@ -24,26 +24,26 @@ const AddEventManager = {
         addEventSection.innerHTML = `
             <form id="addEventForm">
                 <div class="mb-3">
-                    <label for="newEventName" class="form-label">尋找事件名稱 / 類別 / 編號:</label>
+                    <label for="newEventName" class="form-label">尋找聚會名稱 / 類別 / ID:</label>
                     <input type="text" class="form-control" id="newEventName" required />
                 </div>
                 <div class="mb-3">
-                    <label for="newEventType" class="form-label">Event Type:</label>
+                    <label for="newEventType" class="form-label">聚會類別:</label>
                     <input type="text" class="form-control" id="newEventType" list="eventTypeList" required />
                     <datalist id="eventTypeList">
                         ${datalistOptions}
                     </datalist>
                 </div>
                 <div class="mb-3">
-                    <label for="newEventFrom" class="form-label">Datetime From:</label>
+                    <label for="newEventFrom" class="form-label">開始日期:</label>
                     <input type="datetime-local" class="form-control" id="newEventFrom" required />
                 </div>
                 <div class="mb-3">
-                    <label for="newEventTo" class="form-label">Datetime To:</label>
+                    <label for="newEventTo" class="form-label">結束日期:</label>
                     <input type="datetime-local" class="form-control" id="newEventTo" required />
                 </div>
                 <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-calendar-plus"></i>建立新事件
+                    <i class="bi bi-calendar-plus"></i>建立新聚會
                 </button>
             </form>
         `;
@@ -88,7 +88,7 @@ const AddEventManager = {
         // Update workbook attendance
         const wsAtt = XLSX.utils.aoa_to_sheet(this.attMatrix);
         this.workbook.Sheets['attendance'] = wsAtt;
-        showNotification('成功建位新事件', 'success');
+        showNotification('成功建位新聚會', 'success');
         this.renderAddEventForm();
         // Refresh event list in Tick Attendance tab if visible
         if (typeof AttendanceTickingManager !== 'undefined') {

@@ -168,14 +168,14 @@ const AttendanceTickingManager = {
             let eventOptions = sortedEvents.map(ev => `<option value="${ev['ID']}">${ev['Event Name']} (${ev['ID']})</option>`).join('');
             let eventSelect = `
                 <div class="mb-3">
-                    <label for="eventSelect" class="form-label">選擇事件:</label>
+                    <label for="eventSelect" class="form-label">選擇聚會:</label>
                     <select id="eventSelect" class="form-select">
-                        <option value="">-- 選擇事件 --</option>
+                        <option value="">-- 選擇聚會 --</option>
                         ${eventOptions}
                     </select>
                 </div>
                 <div class="mb-3">
-                    <button class="btn btn-success" id="createNewEventBtn"><i class="bi bi-plus-circle"></i>建立新事件</button>
+                    <button class="btn btn-success" id="createNewEventBtn"><i class="bi bi-plus-circle"></i>建立新聚會</button>
                 </div>
                 <div id="createEventFormContainer"></div>
             `;
@@ -192,8 +192,9 @@ const AttendanceTickingManager = {
             });
         } else {
             // Stage 2: Tick attendance for selected event
-            section.innerHTML = `<div class="mb-3 text-end"><button class="btn btn-secondary" id="changeEventBtn"><i class="bi bi-arrow-left-circle"></i>更改事件</button></div><div id="attendanceTick"></div><div id="saveStatus"></div>`;
-            document.getElementById('changeEventBtn').addEventListener('click', function () {
+
+            section.innerHTML = `<div class="mb-3 text-end"><button class="btn btn-secondary" id="changeEventBtn"><i class="bi bi-arrow-left-circle"></i>更改聚會</button></div><div id="attendanceTick"></div><div id="saveStatus"></div>`;
+            document.getElementById('changeEventBtn').addEventListener('click', function() {
                 localStorage.removeItem('tickAttendanceSelectedEventId');
                 AttendanceTickingManager.showAttendanceTicking(sectionElementId);
             });
@@ -211,16 +212,16 @@ const AttendanceTickingManager = {
         // Simple inline form
         container.innerHTML = `
             <form id="inlineCreateEventForm">
-                <div class="mb-2"><input type="text" class="form-control" id="newEventName" placeholder="選擇事件" required></div>
+                <div class="mb-2"><input type="text" class="form-control" id="newEventName" placeholder="選擇聚會" required></div>
                 <div class="mb-2 position-relative">
-                    <input type="text" class="form-control" id="newEventType" placeholder="事件類別" required list="newEventTypeSuggestions" autocomplete="off">
+                    <input type="text" class="form-control" id="newEventType" placeholder="聚會類別" required list="newEventTypeSuggestions" autocomplete="off">
                     <datalist id="newEventTypeSuggestions">
                         ${existingEventTypes.map(type => `<option value="${type}">`).join('')}
                     </datalist>
                 </div>
                 <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventFrom" required></div>
                 <div class="mb-2"><input type="datetime-local" class="form-control" id="newEventTo" required></div>
-                <button type="submit" class="btn btn-primary">建立新事件</button>
+                <button type="submit" class="btn btn-primary">建立新聚會</button>
             </form>
         `;
         document.getElementById('inlineCreateEventForm').addEventListener('submit', function (e) {
@@ -254,7 +255,7 @@ const AttendanceTickingManager = {
             }
             // Update workbook attendance
             DataHelper.setAttendanceMatrix(attMatrix);
-            showNotification('成功建立新事件', 'success');
+            showNotification('成功建立新聚會', 'success');
             localStorage.setItem('tickAttendanceSelectedEventId', newId);
             AttendanceTickingManager.showAttendanceTicking(sectionElementId);
         });
