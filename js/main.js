@@ -67,11 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ensureSidebarToggleBtn();
     window.addEventListener('resize', ensureSidebarToggleBtn);
 
-    // add event listener to the save button
-    document.getElementById('saveAttendanceTabBtn').addEventListener('click', function () {
-        console.log('save button clicked');
-        DataHelper.downloadWorkbook();
-    });
+   
 
     // Sidebar toggle logic (robust)
     document.addEventListener('click', function (e) {
