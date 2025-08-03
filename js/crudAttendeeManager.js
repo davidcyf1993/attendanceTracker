@@ -44,7 +44,7 @@ const CrudAttendeeManager = {
             <button class="btn btn-success" id="addAttendeeBtn"><i class="bi bi-plus-circle"></i>新增參加者</button>
         </div>`;
         table += `<div class="table-responsive"><table class="table table-hover"><thead><tr>
-            <th class="sortable" data-key="ID">${thLabel('編號', 'ID')}</th>
+            <th class="sortable" data-key="ID">${thLabel('ID', 'ID')}</th>
             <th class="sortable" data-key="Full Name">${thLabel('姓名', 'Full Name')}</th>
             <th class="sortable" data-key="Nick Name">${thLabel('別名', 'Nick Name')}</th>
             <th>動作</th></tr></thead><tbody id="crudAttendeeTableBody">`;
@@ -108,15 +108,15 @@ const CrudAttendeeManager = {
         
         section.innerHTML = `<form id="attendeeForm">
             <div class="mb-3">
-                <label class="form-label">ID</label>
+                <label class="form-label">ID:</label>
                 <input type="text" class="form-control" id="attendeeId" value="${att['ID'] || newId}" ${isEdit ? 'readonly' : ''} required />
             </div>
             <div class="mb-3">
-                <label class="form-label">Full Name</label>
+                <label class="form-label">姓名:</label>
                 <input type="text" class="form-control" id="attendeeFullName" value="${att['Full Name'] || ''}" required />
             </div>
             <div class="mb-3">
-                <label class="form-label">Nick Name</label>
+                <label class="form-label">別名:</label>
                 <input type="text" class="form-control" id="attendeeNickName" value="${att['Nick Name'] || ''}" />
             </div>
             <button type="submit" class="btn btn-primary">${isEdit ? '更改' : '新增'}參加者</button>
@@ -134,14 +134,14 @@ const CrudAttendeeManager = {
         const fullName = document.getElementById('attendeeFullName').value.trim();
         const nickName = document.getElementById('attendeeNickName').value.trim();
         if (!id || !fullName) {
-            showNotification('必需填寫編號及姓名', 'danger');
+            showNotification('必需填寫ID及姓名', 'danger');
             return;
         }
         if (isEdit) {
             DataHelper.updateAttendee(id, { 'Full Name': fullName, 'Nick Name': nickName });
         } else {
             if (DataHelper.getAttendees().some(a => String(a['ID']) === String(id))) {
-                showNotification('編號重復', 'danger');
+                showNotification('ID重復', 'danger');
                 return;
             }
             DataHelper.addAttendee({ 'ID': id, 'Full Name': fullName, 'Nick Name': nickName });
@@ -152,7 +152,7 @@ const CrudAttendeeManager = {
 
     deleteAttendee(id) {
         var currentAttendee = DataHelper.getAttendees().filter(a => String(a['ID']) === String(id))[0];
-        if (!confirm('刪除參加者資料?\n編號: ' + currentAttendee['ID'] + '\n事件名稱: ' + currentAttendee['Full Name'])) return;
+        if (!confirm('刪除參加者資料?\nID: ' + currentAttendee['ID'] + '\n聚會名稱: ' + currentAttendee['Full Name'])) return;
 
         DataHelper.deleteAttendee(id);
         showNotification('參加者資料已刪除', 'success');
