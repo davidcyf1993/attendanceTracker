@@ -78,6 +78,15 @@ html {
     box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
+.card-body table {
+    font-size: 1.25em;
+}
+
+.card-body input[type="checkbox"] {
+    width: 30px;
+    height: 30px;
+}
+
 .display-4 {
     font-size: 3rem;
 }
@@ -160,6 +169,7 @@ html {
 }
 
 #attendanceTable th, #attendanceTable td {
+    font-size: 1em;
     border: 1px solid #e0e0e0;
     padding: 0.8em 1em;
     text-align: left;
@@ -307,7 +317,8 @@ i.bi {
     }
     
     #attendanceTable th, #attendanceTable td {
-        padding: 0.6em 0.8em;
+        padding: 0.8em;
+        font-size: 1.5em;
     }
 }
 
@@ -350,10 +361,14 @@ i.bi {
     }
     
     .card-header {
-        padding: 1rem;
+        padding: 1.25rem;
     }
     
     .card-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .card-header h5 {
         font-size: 1.5rem;
     }
     
@@ -369,14 +384,15 @@ i.bi {
     }
     
     #attendanceTable th, #attendanceTable td {
-        padding: 0.5em 0.6em;
+        font-size: 1.5em;
+        padding: 1em;
         white-space: nowrap;
     }
     
     /* Adjust form inputs for mobile */
     .form-control {
-        padding: 0.625rem 0.875rem;
-        font-size: 0.9rem;
+        padding: 0.8rem;
+        font-size: 1.2rem;
     }
     
     /* Stack form elements vertically on mobile */
@@ -388,7 +404,7 @@ i.bi {
     /* Adjust button sizes for mobile */
     .btn {
         padding: 0.625rem 1.25rem;
-        font-size: 0.9rem;
+        font-size: 1.2rem;
     }
 }
 
@@ -420,8 +436,8 @@ i.bi {
 @media (max-width: 767px) {
     /* Improve touch targets */
     input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
+        width: 40px;
+        height: 40px;
     }
     
     /* Better spacing for mobile */
