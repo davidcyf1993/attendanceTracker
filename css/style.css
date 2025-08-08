@@ -67,6 +67,14 @@ html {
 }
 
 /* Home page cards */
+#attendanceTable th, #attendanceTable td,
+.card-body input[type="checkbox"],
+.form-control select,
+.form-control input {
+    border-color: #6b6b6b;
+}
+
+
 .card-body .card {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border: 1px solid #e9ecef;
@@ -85,6 +93,7 @@ html {
 .card-body input[type="checkbox"] {
     width: 30px;
     height: 30px;
+    border-width: 2px;
 }
 
 .display-4 {
@@ -94,7 +103,7 @@ html {
 /* Form styling */
 .form-control {
     border-radius: 8px;
-    border: 2px solid #e9ecef;
+    border: 2px solid;
     padding: 0.75rem 1rem;
     transition: border-color 0.3s ease;
 }
@@ -163,16 +172,17 @@ html {
     width: 100%;
     border-collapse: collapse;
     margin-top: 1em;
-    border-radius: 10px;
+    /* border-radius: 10px; */
     overflow: hidden;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 #attendanceTable th, #attendanceTable td {
     font-size: 1em;
-    border: 1px solid #e0e0e0;
+    border: 1px solid;
     padding: 0.8em 1em;
     text-align: left;
+    vertical-align: middle;
 }
 
 #attendanceTable th {
@@ -198,7 +208,7 @@ input[type="checkbox"] {
 
 /* Checkbox column width */
 #attendanceTable .checkAttendance {
-    width: 80px;    
+    width: 120px;
 }
 
 /* Status messages */
@@ -380,11 +390,12 @@ i.bi {
     
     #attendanceTable {
         font-size: 0.8rem;
+        border-color: white;
     }
     
     #attendanceTable th, #attendanceTable td {
-        font-size: 1.5em;
-        padding: 1em;
+        font-size: 2.5em;
+        padding: 0.75em;
     }
     
     /* Adjust form inputs for mobile */
@@ -433,9 +444,10 @@ i.bi {
 /* Additional mobile optimizations */
 @media (max-width: 767px) {
     /* Improve touch targets */
-    input[type="checkbox"] {
-        width: 40px;
-        height: 40px;
+    .card-body input[type="checkbox"], input[type="checkbox"] {
+        width: 50px;
+        height: 50px;
+        border-width: 2px;
     }
     
     /* Better spacing for mobile */
